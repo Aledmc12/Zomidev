@@ -1,0 +1,28 @@
+{
+  "name": "zomidev",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS='--no-experimental-webstorage' next dev",
+    "dev:clean": "rm -rf .next && cross-env NODE_OPTIONS='--no-experimental-webstorage' next dev",
+    "build": "cross-env NODE_OPTIONS='--no-experimental-webstorage' next build",
+    "start": "cross-env NODE_OPTIONS='--no-experimental-webstorage' next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^0.511.0",
+    "next": "15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.2",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^3.4.19"
+  }
+}

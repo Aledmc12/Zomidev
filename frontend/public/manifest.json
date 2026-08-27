@@ -1,0 +1,16 @@
+{
+  "name": "ZomiDev",
+  "short_name": "ZomiDev",
+  "description": "Estudio de desarrollo de software. El lujo del detalle.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#c9a962",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

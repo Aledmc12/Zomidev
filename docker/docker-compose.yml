@@ -1,0 +1,89 @@
+# ZomiDev — Docker Compose (desarrollo local)
+# En produccion: no exponer puertos de DB/Redis al host.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: zomidev_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-zomidev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zomidev_dev_pass_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-zomidev}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zomidev} -d ${POSTGRES_DB:-zomidev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zomidev_internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: zomidev_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_dev_pass_change_me}
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_dev_pass_change_me}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zomidev_internal
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: zomidev_backend
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_dev_pass_change_me}
+      REDIS_HOST: redis
+    ports:
+      - "127.0.0.1:8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - zomidev_internal
+    profiles:
+      - full
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: zomidev_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - zomidev_internal
+    profiles:
+      - full
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  zomidev_internal:
+    driver: bridge

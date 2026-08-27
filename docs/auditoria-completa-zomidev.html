@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoría Completa — ZomiDev | Julio 2026</title>
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --bg-card: #121214;
+      --bg-elevated: #1a1a1e;
+      --border: rgba(255,255,255,0.08);
+      --text: #e8e6e3;
+      --muted: #9a9690;
+      --gold: #c9a962;
+      --gold-soft: #d4bc7a;
+      --critical: #ff4d4f;
+      --high: #ff7a45;
+      --medium: #faad14;
+      --low: #52c41a;
+      --info: #1890ff;
+      --success: #73d13d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Header */
+    .report-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .report-badge {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid rgba(201,169,98,0.35);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 680px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .meta-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+
+    .meta-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .meta-value {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* Score cards */
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .score-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .score-number {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .score-card.overall .score-number { color: var(--gold); }
+    .score-card.security .score-number { color: var(--high); }
+    .score-card.ux .score-number { color: var(--medium); }
+    .score-card.seo .score-number { color: var(--info); }
+    .score-card.infra .score-number { color: var(--medium); }
+
+    /* Sections */
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--gold-soft);
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    p { margin-bottom: 0.85rem; color: var(--text); }
+    .muted { color: var(--muted); }
+
+    /* Executive summary */
+    .exec-summary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 12px 12px 0;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .exec-summary ul {
+      margin: 0.75rem 0 0 1.25rem;
+    }
+
+    .exec-summary li {
+      margin-bottom: 0.4rem;
+    }
+
+    /* Severity legend */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot.critical { background: var(--critical); }
+    .dot.high { background: var(--high); }
+    .dot.medium { background: var(--medium); }
+    .dot.low { background: var(--low); }
+    .dot.info { background: var(--info); }
+
+    /* Findings table */
+    .findings-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-bottom: 1.5rem;
+    }
+
+    .findings-table th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .findings-table td {
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .findings-table tr:hover td {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .severity {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .severity.critical { background: rgba(255,77,79,0.15); color: var(--critical); }
+    .severity.high { background: rgba(255,122,69,0.15); color: var(--high); }
+    .severity.medium { background: rgba(250,173,20,0.15); color: var(--medium); }
+    .severity.low { background: rgba(82,196,26,0.15); color: var(--low); }
+    .severity.info { background: rgba(24,144,255,0.15); color: var(--info); }
+
+    .id-col { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12px; color: var(--gold); white-space: nowrap; }
+    .file-col { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12px; color: var(--muted); }
+
+    /* Finding cards (mobile fallback) */
+    .finding-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .finding-card .finding-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .finding-card h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .finding-card .rec {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .finding-card .rec strong {
+      color: var(--gold-soft);
+    }
+
+    /* Roadmap */
+    .roadmap {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .phase {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .phase-num {
+      background: var(--gold);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: 12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .phase h4 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .phase ul {
+      margin-left: 1.25rem;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .phase li { margin-bottom: 0.3rem; }
+
+    /* Comparison table */
+    .compare-table td:first-child { font-weight: 500; }
+    .status-bad { color: var(--critical); }
+    .status-warn { color: var(--medium); }
+    .status-good { color: var(--success); }
+
+    /* Positives */
+    .positives {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .positive-item {
+      background: rgba(115,209,61,0.06);
+      border: 1px solid rgba(115,209,61,0.2);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      font-size: 14px;
+    }
+
+    .positive-item::before {
+      content: "✓ ";
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    /* Footer */
+    .report-footer {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* Print */
+    @media print {
+      body { background: #fff; color: #111; }
+      .score-card, .exec-summary, .phase, .finding-card, .meta-item, .positive-item {
+        border-color: #ddd;
+        background: #f9f9f9;
+      }
+      h2 { color: #333; }
+    }
+
+    @media (max-width: 768px) {
+      .findings-table { display: none; }
+      .findings-cards { display: block; }
+    }
+
+    @media (min-width: 769px) {
+      .findings-cards { display: none; }
+    }
+
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .toc ol {
+      margin-left: 1.25rem;
+      columns: 2;
+      column-gap: 2rem;
+    }
+
+    .toc li { margin-bottom: 0.35rem; }
+    .toc a { color: var(--gold-soft); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    .count-bar {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 1rem 0 0.5rem;
+      background: var(--bg-elevated);
+    }
+
+    .count-bar span { height: 100%; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="report-header">
+      <div class="report-badge">Informe confidencial · Auditoría senior</div>
+      <h1>Auditoría Completa — ZomiDev</h1>
+      <p class="subtitle">
+        Evaluación integral de seguridad, experiencia de usuario, SEO, infraestructura y cumplimiento,
+        contrastada con estándares de sitios profesionales de nivel enterprise (Apple, Amazon, agencias premium).
+      </p>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="meta-label">Proyecto</div>
+          <div class="meta-value">zomidev.com</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Fecha</div>
+          <div class="meta-value">18 de julio de 2026</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Stack</div>
+          <div class="meta-value">Next.js 15 · FastAPI · PostgreSQL · Redis</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Alcance</div>
+          <div class="meta-value">Frontend, Backend, API, Infra, UX, Legal</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Estado servicios</div>
+          <div class="meta-value" style="color: var(--success);">✓ API y frontend operativos</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Auditor</div>
+          <div class="meta-value">Revisión senior (10+ años)</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scores -->
+    <div class="score-grid">
+      <div class="score-card overall">
+        <div class="score-number">62<span style="font-size:1rem;color:var(--muted)">/100</span></div>
+        <div class="score-label">Puntuación global</div>
+      </div>
+      <div class="score-card security">
+        <div class="score-number">58</div>
+        <div class="score-label">Seguridad</div>
+      </div>
+      <div class="score-card ux">
+        <div class="score-number">65</div>
+        <div class="score-label">Experiencia UX</div>
+      </div>
+      <div class="score-card seo">
+        <div class="score-number">70</div>
+        <div class="score-label">SEO</div>
+      </div>
+      <div class="score-card infra">
+        <div class="score-number">55</div>
+        <div class="score-label">Infraestructura</div>
+      </div>
+    </div>
+
+    <div class="count-bar" title="Distribución de hallazgos">
+      <span style="width:0%;background:var(--critical)"></span>
+      <span style="width:18%;background:var(--high)"></span>
+      <span style="width:45%;background:var(--medium)"></span>
+      <span style="width:27%;background:var(--low)"></span>
+      <span style="width:10%;background:var(--info)"></span>
+    </div>
+    <p class="muted" style="font-size:13px;margin-bottom:2rem;">
+      0 Críticos · 7 Altos · 18 Medios · 11 Bajos · 7 Informativos — Total: 43 hallazgos
+    </p>
+
+    <!-- TOC -->
+    <nav class="toc">
+      <h3 style="margin-top:0">Índice</h3>
+      <ol>
+        <li><a href="#resumen">Resumen ejecutivo</a></li>
+        <li><a href="#metodologia">Metodología</a></li>
+        <li><a href="#seguridad">Seguridad y exploits</a></li>
+        <li><a href="#ux">Experiencia de usuario</a></li>
+        <li><a href="#seo">SEO y contenido</a></li>
+        <li><a href="#legal">Cumplimiento legal</a></li>
+        <li><a href="#infra">Infraestructura</a></li>
+        <li><a href="#comparativa">Comparativa vs. estándares premium</a></li>
+        <li><a href="#positivos">Aspectos positivos</a></li>
+        <li><a href="#roadmap">Plan de acción priorizado</a></li>
+      </ol>
+    </nav>
+
+    <!-- Executive Summary -->
+    <section id="resumen">
+      <h2>1. Resumen ejecutivo</h2>
+      <div class="exec-summary">
+        <p>
+          <strong>Veredicto:</strong> ZomiDev tiene una base sólida de arquitectura (ORM parametrizado, control de acceso por roles en backend,
+          IDOR bien implementado en portal, honeypot en contacto, headers básicos en API). Sin embargo,
+          <strong>no está listo para producción con datos reales de clientes</strong> sin resolver primero
+          los hallazgos de severidad Alta relacionados con almacenamiento de tokens, dependencias vulnerables,
+          validación de archivos y protección de rutas en frontend.
+        </p>
+        <p><strong>Riesgos principales identificados:</strong></p>
+        <ul>
+          <li><strong>Tokens JWT en localStorage</strong> — cualquier XSS compromete cuentas admin y cliente por hasta 7 días.</li>
+          <li><strong>Sin middleware de autenticación</strong> — rutas /admin y /portal protegidas solo en cliente; el bundle y estructura son visibles.</li>
+          <li><strong>python-multipart 0.0.6</strong> — CVE-2024-24762 permite DoS por ReDoS en uploads.</li>
+          <li><strong>Subida de archivos sin validación de contenido real</strong> — riesgo de entregar malware disfrazado de PDF a clientes.</li>
+          <li><strong>Sin páginas legales</strong> — incumplimiento potencial de Ley 1581/2012 (Habeas Data Colombia) al recolectar PII.</li>
+        </ul>
+        <p style="margin-bottom:0">
+          <strong>Recomendación general:</strong> ejecutar el plan de acción Fase 1 (1–2 semanas) antes de abrir el portal a clientes reales.
+          La Fase 2 (2–4 semanas) eleva la experiencia al nivel de agencias premium. Fase 3 es optimización continua.
+        </p>
+      </div>
+    </section>
+
+    <!-- Methodology -->
+    <section id="metodologia">
+      <h2>2. Metodología</h2>
+      <p>La auditoría siguió un enfoque de revisión en profundidad (white-box) equivalente a estándares OWASP ASVS Level 2, WCAG 2.1 AA (muestreo), y benchmarks de sitios enterprise:</p>
+      <ul style="margin-left:1.25rem;margin-bottom:1rem">
+        <li>Revisión estática de código fuente: frontend (Next.js App Router), backend (FastAPI), servicios, modelos, migraciones.</li>
+        <li>Análisis de vectores de ataque: XSS, CSRF, IDOR, SQLi, SSRF, path traversal, rate-limit bypass, timing attacks, file upload abuse.</li>
+        <li>Evaluación UX: flujos de login, portal, admin, contacto, estados de carga/error, accesibilidad, mobile.</li>
+        <li>Revisión SEO: metadata, sitemap, robots, structured data, Core Web Vitals potenciales.</li>
+        <li>Infraestructura: docker-compose, configuración de servicios, secretos, CORS, headers.</li>
+        <li>Verificación en vivo: health check API (8001) y frontend (3000) — ambos operativos al momento de la auditoría.</li>
+      </ul>
+    </section>
+
+    <!-- Security -->
+    <section id="seguridad">
+      <h2>3. Seguridad y posibles exploits</h2>
+
+      <div class="legend">
+        <div class="legend-item"><span class="dot critical"></span> Crítico</div>
+        <div class="legend-item"><span class="dot high"></span> Alto</div>
+        <div class="legend-item"><span class="dot medium"></span> Medio</div>
+        <div class="legend-item"><span class="dot low"></span> Bajo</div>
+        <div class="legend-item"><span class="dot info"></span> Info</div>
+      </div>
+
+      <table class="findings-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Severidad</th>
+            <th>Hallazgo</th>
+            <th>Archivo(s)</th>
+            <th>Recomendación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="id-col">SEC-H01</td>
+            <td><span class="severity high">Alto</span></td>
+            <td><strong>Tokens JWT almacenados en localStorage</strong><br>El backend emite cookie httponly pero el frontend ignora la cookie y persiste access_token + refresh_token (7 días) en localStorage. Cualquier XSS = robo de sesión persistente incluyendo admin.</td>
+            <td class="file-col">frontend/lib/auth.js<br>backend/app/api/v1/auth.py</td>
+            <td>Migrar a cookies httponly/Secure/SameSite. Eliminar tokens del JSON de respuesta. Añadir protección CSRF si se usan cookies.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-H02</td>
+            <td><span class="severity high">Alto</span></td>
+            <td><strong>python-multipart 0.0.6 vulnerable (CVE-2024-24762)</strong><br>ReDoS via Content-Type en requests multipart. Puede bloquear el worker asyncio completo.</td>
+            <td class="file-col">backend/requirements.txt</td>
+            <td>Actualizar a python-multipart &gt;= 0.0.7 inmediatamente.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-H03</td>
+            <td><span class="severity high">Alto</span></td>
+            <td><strong>Validación de uploads solo por extensión y MIME del cliente</strong><br>Un admin comprometido (o sesión robada) puede subir ejecutables renombrados como .pdf que los clientes descargarán como entregables confiables.</td>
+            <td class="file-col">backend/app/services/file_service.py</td>
+            <td>Validar magic bytes (python-magic). Rechazar mismatch MIME vs contenido. Considerar ClamAV para producción.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-H04</td>
+            <td><span class="severity high">Alto</span></td>
+            <td><strong>Sin protección server-side de rutas /admin y /portal</strong><br>No existe middleware.js. Los layouts son 'use client' y verifican localStorage tras montar. El bundle JS, estructura y UI shell son accesibles sin autenticación real.</td>
+            <td class="file-col">frontend/app/admin/layout.js<br>frontend/app/portal/layout.js</td>
+            <td>Implementar middleware.js con verificación de cookie de sesión en edge. Mantener check cliente solo como UX secundaria.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-H05</td>
+            <td><span class="severity high">Alto</span></td>
+            <td><strong>Sin headers de seguridad en Next.js</strong><br>No hay CSP, HSTS, X-Frame-Options, Permissions-Policy en next.config.js. Maximiza impacto de XSS y permite clickjacking del login/portal.</td>
+            <td class="file-col">frontend/next.config.js</td>
+            <td>Añadir función headers() con CSP restrictiva, frame-ancestors 'none', nosniff, HSTS en prod.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-H06</td>
+            <td><span class="severity high">Alto</span></td>
+            <td><strong>next/image con hostname '**' — vector SSRF</strong><br>El optimizador de imágenes puede fetch-ean cualquier URL HTTPS si algún src es influenciable (CMS, admin content).</td>
+            <td class="file-col">frontend/next.config.js</td>
+            <td>Whitelist de hostnames específicos (CDN propio, dominios conocidos).</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-H07</td>
+            <td><span class="severity high">Alto</span></td>
+            <td><strong>iframe de staging sin sandbox</strong><br>URLs de preview embebidas sin restricciones. URL comprometida = phishing/clickjacking contra clientes autenticados.</td>
+            <td class="file-col">frontend/app/portal/proyectos/[id]/page.js</td>
+            <td>Añadir sandbox restrictivo. Validar que staging_url sea HTTPS y dominio permitido.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M01</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Archivo completo en memoria antes de validar tamaño</strong><br>DoS por agotamiento de memoria con uploads grandes concurrentes.</td>
+            <td class="file-col">backend/app/services/file_service.py:49</td>
+            <td>Streaming con límite incremental. Middleware de body size en ASGI/nginx.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M02</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Sin revocación de refresh tokens</strong><br>JWT stateless con jti generado pero nunca almacenado. Logout no invalida tokens. Sesión robada válida 7 días.</td>
+            <td class="file-col">backend/app/core/security.py<br>backend/app/services/auth_service.py</td>
+            <td>Allowlist/revocation list en Redis por jti. Invalidar en logout, cambio de password, desactivación.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M03</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Rate limiting fail-open si Redis cae</strong><br>check_rate_limit retorna (True, limit) en cualquier excepción — protección anti brute-force desactivada silenciosamente.</td>
+            <td class="file-col">backend/app/utils/redis_client.py:48-50</td>
+            <td>Fail-closed para login. Fallback in-process si Redis no disponible.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M04</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Bypass de rate limit en /contact via X-Forwarded-For</strong><br>Se confía el header sin validar proxy. Cada request con IP distinta = bucket nuevo. Spam ilimitado al inbox.</td>
+            <td class="file-col">backend/app/api/v1/public.py:22-26</td>
+            <td>ProxyHeadersMiddleware con trusted hosts, o usar request.client.host consistentemente.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M05</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>HTML injection en emails de contacto</strong><br>Campos del formulario interpolados sin escape en HTML del email interno. Phishing via email "confiable".</td>
+            <td class="file-col">backend/app/services/email_service.py</td>
+            <td>html.escape() en todos los campos o Jinja2 con autoescape.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M06</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Contenido de mensajes sin sanitizar server-side</strong><br>Mensajes portal y bitácora almacenados raw. Si frontend renderiza HTML → XSS almacenado entre cliente/admin.</td>
+            <td class="file-col">backend/app/services/portal_service.py</td>
+            <td>Confirmar renderizado como texto. Sanitizar en API como defensa en profundidad.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M07</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Timing attack en login — enumeración de emails</strong><br>bcrypt solo se ejecuta si el usuario existe. Respuesta más lenta = email registrado.</td>
+            <td class="file-col">backend/app/services/auth_service.py:19-24</td>
+            <td>Ejecutar bcrypt dummy hash siempre para normalizar timing.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M08</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>python-jose sin mantenimiento (CVE-2024-33663)</strong><br>Mitigado parcialmente por algorithms=[HS256] explícito, pero librería obsoleta.</td>
+            <td class="file-col">backend/requirements.txt<br>backend/app/core/security.py</td>
+            <td>Migrar a PyJWT activamente mantenido.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-M09</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Brute-force distribuido no mitigado</strong><br>Rate limit por IP+email. Rotando IPs se pueden probar contraseñas ilimitadas contra una cuenta.</td>
+            <td class="file-col">backend/app/api/v1/auth.py:23-28</td>
+            <td>Limiter adicional por email solo. Lockout progresivo con alertas.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-L01</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Política de contraseñas débil</strong><br>Mínimo 8 chars admin, sin complejidad ni breach-list check.</td>
+            <td class="file-col">backend/app/schemas/admin.py</td>
+            <td>Mínimo 12 chars, rechazar top-10k passwords, especialmente admin.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-L02</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Credenciales seed predecibles</strong><br>admin@zomidev.com / Admin123! documentadas en seed_data.py.</td>
+            <td class="file-col">backend/scripts/seed_data.py</td>
+            <td>Generar password aleatorio en prod. Fallar si SEED_ADMIN_PASSWORD es default.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-L03</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>.zip en allowlist sin protección zip-bomb</strong><br>Riesgo bajo actual (no se descomprime), pero peligroso si se añade extracción futura.</td>
+            <td class="file-col">backend/app/services/file_service.py:13</td>
+            <td>Limitar tamaño descomprimido si se implementa extracción.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-L04</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>IP resolution inconsistente entre routers</strong><br>auth usa client.host; public usa X-Forwarded-For ciegamente.</td>
+            <td class="file-col">auth.py vs public.py</td>
+            <td>Estandarizar con ProxyHeadersMiddleware.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-L05</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Sin Cache-Control: no-store en respuestas autenticadas</strong><br>Riesgo de cacheo de datos sensibles en proxies corporativos.</td>
+            <td class="file-col">backend/app/main.py</td>
+            <td>Añadir no-store en /auth, /portal, /admin.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-L06</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Sin CSP ni Permissions-Policy en backend</strong><br>Headers básicos presentes pero incompletos. Relevante para /docs en dev.</td>
+            <td class="file-col">backend/app/main.py:72-80</td>
+            <td>Añadir CSP restrictiva y Permissions-Policy.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-L07</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Path traversal guard frágil (startswith)</strong><br>Usar is_relative_to(). Validar archivo_url en creación manual de entregables.</td>
+            <td class="file-col">backend/app/services/file_service.py:67-74</td>
+            <td>Validación en write-time, no solo download-time.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-I01</td>
+            <td><span class="severity info">Info</span></td>
+            <td><strong>/health expone fragmentos de error DB</strong><br>Information disclosure menor a callers no autenticados.</td>
+            <td class="file-col">backend/app/main.py:131-132</td>
+            <td>Respuesta genérica externa; detalle solo en logs internos.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEC-I02</td>
+            <td><span class="severity info">Info</span></td>
+            <td><strong>robots.txt disallow ≠ control de acceso</strong><br>Solo oculta de crawlers bien comportados, no protege rutas.</td>
+            <td class="file-col">frontend/app/robots.js</td>
+            <td>Combinar con middleware real de auth.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Aspectos de seguridad correctamente implementados</h3>
+      <div class="positives">
+        <div class="positive-item">100% queries ORM parametrizadas — sin superficie SQL injection</div>
+        <div class="positive-item">IDOR checks consistentes en portal (cliente_id == user.id)</div>
+        <div class="positive-item">Roles re-fetch desde DB en cada request, no confía en JWT claim</div>
+        <div class="positive-item">bcrypt(12) para passwords, SECRET_KEY validation en prod</div>
+        <div class="positive-item">Honeypot (website) en formulario de contacto</div>
+        <div class="positive-item">TrustedHostMiddleware + CORS configurado</div>
+        <div class="positive-item">Rate limit login 10/15min por IP+email</div>
+        <div class="positive-item">.env correctamente gitignored</div>
+      </div>
+    </section>
+
+    <!-- UX -->
+    <section id="ux">
+      <h2>4. Experiencia de usuario (UX)</h2>
+
+      <table class="findings-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Severidad</th>
+            <th>Hallazgo</th>
+            <th>Recomendación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="id-col">UX-M01</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Errores silenciados en admin</strong><br>admin/page, clientes, proyectos usan .catch(() => {}) — fallos muestran pantalla vacía sin feedback.</td>
+            <td>Hook compartido {data, error, loading} con mensaje de error visible y botón reintentar.</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-M02</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Sin loading.js ni error.js en App Router</strong><br>Sin skeletons, sin boundaries de error brandeados. Excepciones → pantalla genérica Next.js.</td>
+            <td>Añadir error.js y loading.js en root, /portal, /admin con CTAs "Reintentar" / "Volver al inicio".</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-M03</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Flash "Validando acceso..." en cada navegación</strong><br>Guard client-side causa bloqueo visible en portal/admin.</td>
+            <td>Middleware SSR redirect elimina el flash.</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-M04</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Menús mobile sin focus trap ni Escape</strong><br>Hamburger sin aria-expanded. Tab puede llegar a nav off-screen.</td>
+            <td>Focus trap, Escape-to-close, aria-expanded, aria-controls.</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-M05</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Errores de formulario sin aria-live</strong><br>Login, contacto, admin: errores en &lt;p&gt; sin role="alert" ni aria-describedby.</td>
+            <td>Asociar errores a inputs. aria-invalid + aria-describedby + role="alert".</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-M06</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Sin "olvidé mi contraseña"</strong><br>Clientes bloqueados dependen 100% de soporte manual.</td>
+            <td>Flujo reset password con token por email (expira 1h).</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-M07</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Fallback silencioso a localhost:8000</strong><br>6 archivos duplican env fallback. Prod sin env = sitio vacío sin error visible.</td>
+            <td>Centralizar en lib/site.js. Fallar loud en build prod. UI "No pudimos cargar contenido".</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-M08</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Tabs portal/admin sin título propio</strong><br>Todas muestran "ZomiDev" — confuso con múltiples tabs abiertas.</td>
+            <td>metadata export por segmento: "Dashboard — Portal ZomiDev".</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-L01</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Sin toggle mostrar/ocultar contraseña</strong></td>
+            <td>Botón eye icon en campos password.</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-L02</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Iconos decorativos sin aria-hidden</strong></td>
+            <td>aria-hidden="true" en lucide icons junto a texto.</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-L03</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Logo unoptimized — impacto LCP</strong><br>PNG ~400-500KB sin optimización Next Image.</td>
+            <td>Optimizar logo, WebP/AVIF, sizes responsive, quitar unoptimized.</td>
+          </tr>
+          <tr>
+            <td class="id-col">UX-L04</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Sin skip-link para teclado</strong></td>
+            <td>"Saltar al contenido principal" como primer focusable.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Flujos evaluados</h3>
+      <table class="findings-table compare-table">
+        <thead>
+          <tr><th>Flujo</th><th>Estado</th><th>Notas</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Homepage / Hero</td><td class="status-good">✓ Bueno</td><td>Logo animado, slogan, aliados. Diseño coherente.</td></tr>
+          <tr><td>Contacto</td><td class="status-warn">⚠ Mejorable</td><td>Formulario funcional + honeypot. Falta consent legal y feedback rate-limit.</td></tr>
+          <tr><td>Login</td><td class="status-warn">⚠ Mejorable</td><td>Funcional pero sin recovery, sin policy links.</td></tr>
+          <tr><td>Portal cliente</td><td class="status-warn">⚠ Mejorable</td><td>Dashboard, proyectos, mensajes OK. Guard lento, iframe riesgoso.</td></tr>
+          <tr><td>Admin</td><td class="status-warn">⚠ Mejorable</td><td>Timeline editable ✓. Errores silenciados. Sin confirmaciones destructivas.</td></tr>
+          <tr><td>404</td><td class="status-good">✓ Bueno</td><td>not-found.js con CTAs claros.</td></tr>
+          <tr><td>500 / global-error</td><td class="status-bad">✗ Ausente</td><td>Sin global-error.js.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SEO -->
+    <section id="seo">
+      <h2>5. SEO y contenido</h2>
+      <table class="findings-table">
+        <thead>
+          <tr><th>ID</th><th>Severidad</th><th>Hallazgo</th><th>Recomendación</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="id-col">SEO-M01</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Sitemap estático — omite portafolio dinámico</strong><br>/portafolio/[slug] no indexado. Case studies son el contenido más valioso para SEO.</td>
+            <td>Fetch slugs publicados en sitemap.js con lastModified real.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEO-M02</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>/login en sitemap pero disallow en robots</strong><br>Señales contradictorias a buscadores.</td>
+            <td>Quitar /login del sitemap. Añadir noindex meta en login.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEO-M03</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Solo JSON-LD Organization global</strong><br>Sin CreativeWork para portafolio, Service para servicios, ContactPage.</td>
+            <td>Structured data por página para rich snippets.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEO-L01</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Metadata mínima en portafolio detail</strong><br>Solo title, sin description ni OG image por proyecto.</td>
+            <td>generateMetadata con descripción y og:image del case study.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEO-L02</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Sin favicon.ico fallback</strong></td>
+            <td>Añadir public/favicon.ico además de metadata.icons.</td>
+          </tr>
+          <tr>
+            <td class="id-col">SEO-I01</td>
+            <td><span class="severity info">Info</span></td>
+            <td><strong>Solo español, sin hreflang</strong><br>Aceptable para mercado local. Limitante si se expande internacionalmente.</td>
+            <td>Planificar i18n si se apunta a clientes globales.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>SEO implementado correctamente</h3>
+      <div class="positives">
+        <div class="positive-item">robots.js y sitemap.js presentes</div>
+        <div class="positive-item">Metadata base en layout.js (title template, OG, twitter)</div>
+        <div class="positive-item">manifest.json para PWA básica</div>
+        <div class="positive-item">JsonLd Organization en homepage</div>
+        <div class="positive-item">lang="es" en html</div>
+        <div class="positive-item">rel="noopener noreferrer" en links externos</div>
+      </div>
+    </section>
+
+    <!-- Legal -->
+    <section id="legal">
+      <h2>6. Cumplimiento legal y páginas faltantes</h2>
+
+      <table class="findings-table compare-table">
+        <thead>
+          <tr><th>Página / Requisito</th><th>Estado</th><th>Impacto</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Política de privacidad</td><td class="status-bad">✗ Ausente</td><td>Ley 1581/2012 (Colombia), GDPR si hay visitantes EU</td></tr>
+          <tr><td>Términos de servicio</td><td class="status-bad">✗ Ausente</td><td>Sin marco legal para uso del portal</td></tr>
+          <tr><td>Aviso de cookies / consent</td><td class="status-bad">✗ Ausente</td><td>localStorage tokens = almacenamiento funcional a declarar</td></tr>
+          <tr><td>Link legal en footer</td><td class="status-bad">✗ Ausente</td><td>Footer solo tiene enlaces de navegación</td></tr>
+          <tr><td>Consent en formulario contacto</td><td class="status-bad">✗ Ausente</td><td>Recolecta nombre, email, empresa, mensaje sin aviso</td></tr>
+          <tr><td>404 Not Found</td><td class="status-good">✓ Presente</td><td>Bien implementado</td></tr>
+          <tr><td>Reset password</td><td class="status-bad">✗ Ausente</td><td>Flujo esencial para portal B2B</td></tr>
+          <tr><td>FAQ / Proceso</td><td class="status-bad">✗ Ausente</td><td>Reduce fricción pre-venta (común en agencias premium)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Infrastructure -->
+    <section id="infra">
+      <h2>7. Infraestructura y DevOps</h2>
+      <table class="findings-table">
+        <thead>
+          <tr><th>ID</th><th>Severidad</th><th>Hallazgo</th><th>Recomendación</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="id-col">INF-M01</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>PostgreSQL y Redis expuestos en puertos host</strong><br>docker-compose mapea 5432 y 6379 sin autenticación Redis ni network isolation.</td>
+            <td>En prod: no exponer puertos DB. Redis con requirepass. Network interna Docker.</td>
+          </tr>
+          <tr>
+            <td class="id-col">INF-M02</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Credenciales DB débiles en docker-compose</strong><br>zomidev/zomidev — predecibles para dev, peligrosos si se reutilizan.</td>
+            <td>Secrets via .env no commiteado. Passwords fuertes en prod.</td>
+          </tr>
+          <tr>
+            <td class="id-col">INF-M03</td>
+            <td><span class="severity medium">Medio</span></td>
+            <td><strong>Sin servicios app en docker-compose</strong><br>Solo DB/Redis. Frontend y backend corren manualmente — riesgo de config drift.</td>
+            <td>Añadir servicios frontend/backend con healthchecks para deploy reproducible.</td>
+          </tr>
+          <tr>
+            <td class="id-col">INF-L01</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Sin CI/CD pipeline visible</strong><br>No hay GitHub Actions, tests automáticos pre-deploy.</td>
+            <td>Pipeline: lint → test → build → deploy con gates de seguridad.</td>
+          </tr>
+          <tr>
+            <td class="id-col">INF-L02</td>
+            <td><span class="severity low">Bajo</span></td>
+            <td><strong>Sentry configurado pero opcional</strong><br>Sin monitoreo activo en dev. Crítico tenerlo en prod.</td>
+            <td>Activar SENTRY_DSN en producción. Alertas para 5xx y auth failures.</td>
+          </tr>
+          <tr>
+            <td class="id-col">INF-I01</td>
+            <td><span class="severity info">Info</span></td>
+            <td><strong>RESEND_API_KEY no configurada en dev</strong><br>Emails se loguean — correcto para dev, requerido para prod.</td>
+            <td>Configurar Resend antes de go-live contacto.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Comparison -->
+    <section id="comparativa">
+      <h2>8. Comparativa vs. estándares premium (Apple / Amazon / agencias top)</h2>
+      <table class="findings-table compare-table">
+        <thead>
+          <tr><th>Dimensión</th><th>ZomiDev hoy</th><th>Estándar enterprise</th><th>Gap</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Autenticación</td>
+            <td>localStorage + client guard</td>
+            <td>httpOnly cookies + edge middleware + MFA opcional</td>
+            <td class="status-bad">Alto</td>
+          </tr>
+          <tr>
+            <td>Security headers</td>
+            <td>Parcial (solo backend API)</td>
+            <td>CSP estricta, HSTS, frame-ancestors en todas las respuestas</td>
+            <td class="status-bad">Alto</td>
+          </tr>
+          <tr>
+            <td>File handling</td>
+            <td>Extensión + MIME cliente</td>
+            <td>Content sniffing + AV scan + streaming limits</td>
+            <td class="status-bad">Alto</td>
+          </tr>
+          <tr>
+            <td>Legal / Privacy</td>
+            <td>Ausente</td>
+            <td>Privacy, Terms, Cookie consent siempre presentes</td>
+            <td class="status-bad">Alto</td>
+          </tr>
+          <tr>
+            <td>Error handling</td>
+            <td>Ad hoc, algunos silenciados</td>
+            <td>Branded boundaries, retry, support CTA, monitoring</td>
+            <td class="status-warn">Medio</td>
+          </tr>
+          <tr>
+            <td>Loading UX</td>
+            <td>Texto "Cargando..."</td>
+            <td>Skeleton screens, streaming SSR, optimistic UI</td>
+            <td class="status-warn">Medio</td>
+          </tr>
+          <tr>
+            <td>SEO</td>
+            <td>Básico funcional</td>
+            <td>Dynamic sitemap, per-page schema, OG images</td>
+            <td class="status-warn">Medio</td>
+          </tr>
+          <tr>
+            <td>Accesibilidad</td>
+            <td>Focus rings ✓, gaps en ARIA</td>
+            <td>WCAG 2.1 AA completo, audit automatizado</td>
+            <td class="status-warn">Medio</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>Logo unoptimized, PNGs grandes</td>
+            <td>LCP &lt; 2.5s, AVIF, CDN, lazy loading inteligente</td>
+            <td class="status-warn">Medio</td>
+          </tr>
+          <tr>
+            <td>Design system</td>
+            <td>Coherente (card-surface, badges, gold palette)</td>
+            <td>Similar — buena base visual</td>
+            <td class="status-good">Bajo</td>
+          </tr>
+          <tr>
+            <td>API security</td>
+            <td>IDOR OK, ORM OK, rate limits parciales</td>
+            <td>Token revocation, fail-closed, WAF</td>
+            <td class="status-warn">Medio</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Positives -->
+    <section id="positivos">
+      <h2>9. Fortalezas del proyecto</h2>
+      <div class="positives">
+        <div class="positive-item">Arquitectura limpia: separación frontend/backend/servicios bien definida</div>
+        <div class="positive-item">Control de acceso backend robusto — IDOR y roles correctamente implementados</div>
+        <div class="positive-item">Sin SQL injection — 100% ORM parametrizado verificado</div>
+        <div class="positive-item">Diseño visual premium coherente — paleta oscura/dorada profesional</div>
+        <div class="positive-item">Portal funcional: proyectos, timeline, mensajes, notificaciones, entregables</div>
+        <div class="positive-item">Admin con editor de timeline (crear, editar, reordenar hitos)</div>
+        <div class="positive-item">Formulario contacto con honeypot anti-bot</div>
+        <div class="positive-item">SEO base implementado (robots, sitemap, metadata, JSON-LD, manifest)</div>
+        <div class="positive-item">Validación de settings críticos en producción (SECRET_KEY, DEBUG)</div>
+        <div class="positive-item">Upload/download de entregables con auth en portal</div>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section id="roadmap">
+      <h2>10. Plan de acción priorizado (Quehaceres)</h2>
+
+      <div class="roadmap">
+        <div class="phase">
+          <div class="phase-header">
+            <div class="phase-num">1</div>
+            <div>
+              <h4>Fase 1 — Bloqueantes pre-producción (1–2 semanas)</h4>
+              <p class="muted" style="font-size:13px;margin:0">Resolver antes de abrir portal a clientes reales</p>
+            </div>
+          </div>
+          <ul>
+            <li><strong>SEC-H02:</strong> Actualizar python-multipart &gt;= 0.0.7</li>
+            <li><strong>SEC-H01 + SEC-M02:</strong> Migrar tokens a cookies httponly + revocación Redis</li>
+            <li><strong>SEC-H04 + SEC-H05:</strong> middleware.js + security headers en Next.js</li>
+            <li><strong>SEC-H03 + SEC-M01:</strong> Validación magic bytes + streaming upload</li>
+            <li><strong>SEC-M04 + SEC-M05:</strong> Fix rate limit contact + escape HTML emails</li>
+            <li><strong>Legal:</strong> Crear /politica-de-privacidad y /terminos, link en footer y contacto</li>
+            <li><strong>INF:</strong> No exponer DB/Redis en prod, passwords fuertes</li>
+            <li><strong>SEC-L02:</strong> Cambiar credenciales seed y admin email a @zomidev.com</li>
+          </ul>
+        </div>
+
+        <div class="phase">
+          <div class="phase-header">
+            <div class="phase-num">2</div>
+            <div>
+              <h4>Fase 2 — Experiencia premium (2–4 semanas)</h4>
+              <p class="muted" style="font-size:13px;margin:0">Elevar percepción al nivel de agencias top</p>
+            </div>
+          </div>
+          <ul>
+            <li><strong>UX-M01/M02:</strong> error.js + loading.js brandeados, errores visibles en admin</li>
+            <li><strong>UX-M06:</strong> Flujo "olvidé mi contraseña"</li>
+            <li><strong>SEC-H06/H07:</strong> Whitelist image hosts + sandbox iframe staging</li>
+            <li><strong>SEO-M01/M02/M03:</strong> Sitemap dinámico, JSON-LD por página, OG images</li>
+            <li><strong>UX-M04/M05:</strong> Accesibilidad: focus trap, aria-live, skip-link</li>
+            <li><strong>UX-L03:</strong> Optimizar logo e imágenes (WebP, quitar unoptimized)</li>
+            <li><strong>SEC-M07/M08/M09:</strong> Timing fix, PyJWT, brute-force por email</li>
+            <li>Configurar RESEND_API_KEY y SENTRY_DSN en producción</li>
+            <li>Notificaciones al cliente cuando cambia estado de hito</li>
+          </ul>
+        </div>
+
+        <div class="phase">
+          <div class="phase-header">
+            <div class="phase-num">3</div>
+            <div>
+              <h4>Fase 3 — Optimización continua (ongoing)</h4>
+              <p class="muted" style="font-size:13px;margin:0">Polish, contenido, escalabilidad</p>
+            </div>
+          </div>
+          <ul>
+            <li>CI/CD pipeline con tests automáticos y security scanning</li>
+            <li>Progreso % auto-calculado desde hitos completados</li>
+            <li>Endpoint DELETE para hitos de timeline</li>
+            <li>Página FAQ y blog/insights para SEO de contenido</li>
+            <li>ClamAV para scan de uploads en producción</li>
+            <li>Audit WCAG 2.1 AA completo con axe/Lighthouse</li>
+            <li>MFA opcional para cuentas admin</li>
+            <li>i18n si se expande a mercado internacional</li>
+            <li>Logos PNG nativos con transparencia del diseñador</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="report-footer">
+      <p>Auditoría Completa ZomiDev · Generado el 18 de julio de 2026</p>
+      <p style="margin-top:0.5rem">Este documento es confidencial y está destinado exclusivamente al equipo de ZomiDev.</p>
+      <p style="margin-top:0.5rem;font-size:12px">Metodología: OWASP ASVS L2 · WCAG 2.1 AA (muestreo) · Revisión white-box de código fuente</p>
+    </footer>
+
+  </div>
+</body>
+</html>

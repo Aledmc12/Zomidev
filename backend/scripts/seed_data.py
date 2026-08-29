@@ -1,10 +1,18 @@
 """
 Seed de datos iniciales para ZomiDev.
-Ejecutar: python -m scripts.seed_data
+Ejecutar desde /app:
+  python -m scripts.seed_data
+  python scripts/seed_data.py
 """
 import asyncio
+import sys
 import uuid
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+
+_APP_ROOT = Path(__file__).resolve().parents[1]
+if str(_APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_APP_ROOT))
 
 from sqlalchemy import select
 

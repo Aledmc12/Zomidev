@@ -61,6 +61,11 @@ def _normalize_postgres_url(url: str) -> str:
     return url
 
 
+def _is_direct_supabase_host(hostname: str | None) -> bool:
+    """db.PROJECT.supabase.co solo tiene IPv6; el pooler ya expone IPv4."""
+    return bool(hostname and hostname.startswith("db.") and hostname.endswith(".supabase.co"))
+
+
 def _ssl_required(query_pairs: list[tuple[str, str]], hostname: str | None) -> bool:
     for key, value in query_pairs:
         if key in _ASYNCPG_STRIP_QUERY_KEYS:
@@ -108,7 +113,8 @@ def prepare_database_urls(raw_url: str) -> PreparedDatabaseUrls:
             )
 
     sync_pairs = list(query_pairs)
-    if ipv4 and hostname and not any(key == "hostaddr" for key, _ in sync_pairs):
+    use_ipv4_fallback = bool(ipv4 and _is_direct_supabase_host(hostname))
+    if use_ipv4_fallback and not any(key == "hostaddr" for key, _ in sync_pairs):
         sync_pairs.append(("hostaddr", ipv4))
         logger.info("DATABASE_URL: conexion IPv4 %s -> %s", hostname, ipv4)
 
@@ -124,13 +130,12 @@ def prepare_database_urls(raw_url: str) -> PreparedDatabaseUrls:
         async_pairs.append((key, value))
 
     async_base = urlunparse(parsed._replace(query=urlencode(async_pairs)))
-    force_ipv4 = bool(ipv4 and hostname)
 
-    if force_ipv4:
+    if use_ipv4_fallback:
         async_base = _replace_hostname(async_base, ipv4)
 
     if ssl_needed:
-        connect_args["ssl"] = _async_ssl_context(force_ipv4=force_ipv4)
+        connect_args["ssl"] = _async_ssl_context(force_ipv4=use_ipv4_fallback)
 
     async_url = async_base.replace("postgresql://", "postgresql+asyncpg://", 1)
     return PreparedDatabaseUrls(

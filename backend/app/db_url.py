@@ -66,19 +66,33 @@ def _is_direct_supabase_host(hostname: str | None) -> bool:
     return bool(hostname and hostname.startswith("db.") and hostname.endswith(".supabase.co"))
 
 
-def _ssl_required(query_pairs: list[tuple[str, str]], hostname: str | None) -> bool:
+def _parse_ssl_mode(query_pairs: list[tuple[str, str]]) -> str | None:
     for key, value in query_pairs:
         if key in _ASYNCPG_STRIP_QUERY_KEYS:
-            if value.lower() in {"require", "verify-ca", "verify-full", "prefer", "true", "1"}:
-                return True
+            return value.lower()
+    return None
+
+
+def _ssl_required(query_pairs: list[tuple[str, str]], hostname: str | None) -> bool:
+    mode = _parse_ssl_mode(query_pairs)
+    if mode in {"disable", "false", "0"}:
+        return False
+    if mode in {"require", "verify-ca", "verify-full", "prefer", "true", "1"}:
+        return True
     return bool(hostname and "supabase.co" in hostname)
 
 
-def _async_ssl_context(*, force_ipv4: bool) -> ssl.SSLContext:
-    ctx = ssl.create_default_context()
-    # Con IP directa el cert no coincide con el hostname; verificamos CA de Supabase.
-    if force_ipv4:
-        ctx.check_hostname = False
+def _async_ssl_context(*, ssl_mode: str | None, force_ipv4: bool) -> ssl.SSLContext:
+    """asyncpg: sslmode=require cifra sin verify-full (igual que psycopg2/libpq)."""
+    if ssl_mode in {"verify-ca", "verify-full"}:
+        ctx = ssl.create_default_context()
+        if force_ipv4:
+            ctx.check_hostname = False
+        return ctx
+
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
     return ctx
 
 
@@ -135,7 +149,10 @@ def prepare_database_urls(raw_url: str) -> PreparedDatabaseUrls:
         async_base = _replace_hostname(async_base, ipv4)
 
     if ssl_needed:
-        connect_args["ssl"] = _async_ssl_context(force_ipv4=use_ipv4_fallback)
+        connect_args["ssl"] = _async_ssl_context(
+            ssl_mode=_parse_ssl_mode(query_pairs),
+            force_ipv4=use_ipv4_fallback,
+        )
 
     async_url = async_base.replace("postgresql://", "postgresql+asyncpg://", 1)
     return PreparedDatabaseUrls(

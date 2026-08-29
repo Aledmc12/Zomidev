@@ -30,7 +30,7 @@ Cloudflare (DNS + WAF + bots + SSL edge)
    ▼
 VPS — Nginx (multi-site por server_name)
    ├── tu-sitio-existente.com  → 127.0.0.1:PUERTO_A   (sin cambios)
-   └── zomidev.com             → 127.0.0.1:3000       (Docker frontend)
+   └── zomidev.com             → 127.0.0.1:3010       (Docker frontend)
                                         │
                                         ├─► backend:8000 (Docker, red interna)
                                         ├─► redis (Docker, red interna)
@@ -211,11 +211,7 @@ sudo nginx -T | grep -E "server_name|proxy_pass|listen"
 sudo ss -tlnp | grep -E ':80|:443|:3000|:3010'
 ```
 
-Si **3000 está ocupado**, en `docker/.env` usa:
-```
-ZOMIDEV_FRONTEND_PORT=3010
-```
-Y en `docker/nginx/zomidev.conf` reemplaza `ZOMIDEV_PORT` por `3010`.
+Si **3010 está ocupado**, cambia `ZOMIDEV_FRONTEND_PORT` en `docker/.env` y el `proxy_pass` en `docker/nginx/zomidev*.conf`.
 
 ### 4.2 Instalar dependencias (si no las tienes)
 
@@ -245,7 +241,7 @@ cp docker/.env.example docker/.env
 nano docker/.env
 # REDIS_PASSWORD=...
 # NEXT_PUBLIC_SITE_URL=https://zomidev.com
-# ZOMIDEV_FRONTEND_PORT=3000
+# ZOMIDEV_FRONTEND_PORT=3010
 
 # Backend
 cp backend/.env.production.example backend/.env.production
@@ -263,17 +259,20 @@ docker compose -f docker-compose.prod.yml logs -f
 
 Verifica localmente:
 ```bash
-curl -I http://127.0.0.1:3000
+curl -I http://127.0.0.1:3010
 ```
 
 ### 4.6 Nginx — añadir ZomiDev sin modificar el otro sitio
 
-```bash
-# Copia la plantilla y ajusta el puerto
-sudo cp /opt/zomidev/app/docker/nginx/zomidev.conf /etc/nginx/sites-available/zomidev
-sudo sed -i 's/ZOMIDEV_PORT/3000/' /etc/nginx/sites-available/zomidev
+Usa la plantilla **HTTP inicial** (`zomidev.initial.conf`). La plantilla con SSL (`zomidev.conf`) requiere certificados que aún no existen — Nginx fallará con `options-ssl-nginx.conf: No such file`.
 
-sudo ln -s /etc/nginx/sites-available/zomidev /etc/nginx/sites-enabled/
+```bash
+sudo mkdir -p /var/www/html
+
+# Copia la plantilla HTTP (proxy → 127.0.0.1:3010)
+sudo cp /opt/zomidev/app/docker/nginx/zomidev.initial.conf /etc/nginx/sites-available/zomidev
+
+sudo ln -sf /etc/nginx/sites-available/zomidev /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
@@ -281,10 +280,19 @@ Tu sitio existente sigue en su propio archivo (`/etc/nginx/sites-enabled/otro-si
 
 ### 4.7 Certificado HTTPS (Let's Encrypt)
 
+Con Nginx en HTTP funcionando:
+
 ```bash
 sudo certbot --nginx -d zomidev.com -d www.zomidev.com \
   --redirect --agree-tos -m tu@email.com
 sudo certbot renew --dry-run
+```
+
+Certbot crea los certificados y añade el bloque HTTPS. Opcional: sustituye por `zomidev.conf` (headers extra) **después** de Certbot:
+
+```bash
+sudo cp /opt/zomidev/app/docker/nginx/zomidev.conf /etc/nginx/sites-available/zomidev
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 Con Cloudflare en **Full (strict)**, el origen (VPS) debe tener certificado válido — Certbot lo resuelve.

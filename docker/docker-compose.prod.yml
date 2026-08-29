@@ -64,8 +64,8 @@ services:
     depends_on:
       - backend
     ports:
-      # Solo localhost — Nginx en el host hace proxy. Cambia 3000 si tu otro sitio lo usa.
-      - "127.0.0.1:${ZOMIDEV_FRONTEND_PORT:-3000}:3000"
+      # Solo localhost — Nginx en el host hace proxy (default 3010).
+      - "127.0.0.1:${ZOMIDEV_FRONTEND_PORT:-3010}:3000"
     networks:
       - zomidev_internal
 

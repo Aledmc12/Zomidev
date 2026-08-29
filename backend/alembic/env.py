@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import settings
 from app.database import Base
+from app.db_url import prepare_database_urls
 import app.models  # noqa: F401
 
 config = context.config
@@ -15,10 +16,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    url = settings.DATABASE_URL
-    if url.startswith("postgresql+asyncpg://"):
-        return url.replace("postgresql+asyncpg://", "postgresql://", 1)
-    return url
+    return prepare_database_urls(settings.DATABASE_URL).sync_url
 
 
 def run_migrations_offline() -> None:

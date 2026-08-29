@@ -92,6 +92,10 @@ postgresql://postgres:TU_PASSWORD@db.clowsffrfsxxbvrytppv.supabase.co:5432/postg
 
 > Para muchas conexiones concurrentes, usa el **pooler** (puerto 6543) en lugar de 5432.
 
+> En VPS/Docker **sin IPv6**, el backend y Alembic fuerzan IPv4 automaticamente (`hostaddr`).
+> Si aun falla la conexion, usa el **Session pooler** de Supabase (compatible IPv4):
+> `postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres?sslmode=require`
+
 ### 2.2 Migraciones (desde tu Mac, una vez)
 
 ```bash

@@ -28,16 +28,20 @@ Internet
 Cloudflare (DNS + WAF + bots + SSL edge)
    │
    ▼
-VPS — Nginx (multi-site por server_name)
-   ├── tu-sitio-existente.com  → 127.0.0.1:PUERTO_A   (sin cambios)
-   └── zomidev.com             → 127.0.0.1:3010       (Docker frontend)
-                                        │
-                                        ├─► backend:8000 (Docker, red interna)
-                                        ├─► redis (Docker, red interna)
-                                        └─► Supabase PostgreSQL (externo)
+VPS — wingconcept_nginx (80/443, multi-site por server_name)
+   ├── wingconcept.com  → frontend WingConcept (Docker interno)
+   └── zomidev.com      → 127.0.0.1:8080
+                                    │
+                                    ▼
+                          zomidev_nginx (Docker, puerto 8080)
+                                    │
+                                    ├─► zomidev_frontend:3000
+                                    ├─► zomidev_backend:8000
+                                    ├─► zomidev_redis
+                                    └─► Supabase PostgreSQL (externo)
 ```
 
-ZomiDev **no compite** con tu otro sitio: cada dominio tiene su propio bloque `server` en Nginx y su propio puerto local.
+ZomiDev tiene **su propio nginx** (`zomidev_nginx`). WingConcept solo añade un bloque mínimo que reenvía `zomidev.com` al puerto **8080**.
 
 ---
 
@@ -208,19 +212,21 @@ Por ahora el formulario ya tiene **honeypot** + rate limit en backend; Turnstile
 sudo nginx -T | grep -E "server_name|proxy_pass|listen"
 
 # Puertos en uso
-sudo ss -tlnp | grep -E ':80|:443|:3000|:3010'
+sudo ss -tlnp | grep -E ':80|:443|:8080'
 ```
 
-Si **3010 está ocupado**, cambia `ZOMIDEV_FRONTEND_PORT` en `docker/.env` y el `proxy_pass` en `docker/nginx/zomidev*.conf`.
+Si **8080 está ocupado**, cambia `ZOMIDEV_NGINX_PORT` en `docker/.env` y el `proxy_pass` en `docker/nginx/wingconcept-proxy.snippet.conf`.
 
 ### 4.2 Instalar dependencias (si no las tienes)
 
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y git docker.io docker-compose-plugin nginx certbot python3-certbot-nginx
+sudo apt install -y git docker.io docker-compose-plugin
 sudo usermod -aG docker $USER
 # Cierra sesión y vuelve a entrar
 ```
+
+> **No instales nginx en el host** si WingConcept ya usa `wingconcept_nginx` en Docker (puertos 80/443).
 
 ### 4.3 Clonar ZomiDev (sin tocar el otro sitio)
 
@@ -241,7 +247,7 @@ cp docker/.env.example docker/.env
 nano docker/.env
 # REDIS_PASSWORD=...
 # NEXT_PUBLIC_SITE_URL=https://zomidev.com
-# ZOMIDEV_FRONTEND_PORT=3010
+# ZOMIDEV_NGINX_PORT=8080
 
 # Backend
 cp backend/.env.production.example backend/.env.production
@@ -253,49 +259,58 @@ nano backend/.env.production
 
 ```bash
 cd /opt/zomidev/app/docker
-docker compose -f docker-compose.prod.yml --env-file .env up -d --build
-docker compose -f docker-compose.prod.yml logs -f
+docker compose -p zomidev -f docker-compose.prod.yml --env-file .env up -d --build
+docker compose -p zomidev -f docker-compose.prod.yml ps
 ```
 
 Verifica localmente:
 ```bash
-curl -I http://127.0.0.1:3010
+curl -I http://127.0.0.1:8080
 ```
 
-### 4.6 Nginx — añadir ZomiDev sin modificar el otro sitio
+Debes ver contenedores `zomidev_nginx`, `zomidev_frontend`, `zomidev_backend`, `zomidev_redis` — **sin** mezclar `wingconcept_*`.
 
-Usa la plantilla **HTTP inicial** (`zomidev.initial.conf`). La plantilla con SSL (`zomidev.conf`) requiere certificados que aún no existen — Nginx fallará con `options-ssl-nginx.conf: No such file`.
+### 4.6 WingConcept — bloque mínimo para zomidev.com
+
+Edita **solo una vez** el nginx de WingConcept. Copia el snippet del repo:
 
 ```bash
-sudo mkdir -p /var/www/html
-
-# Copia la plantilla HTTP (proxy → 127.0.0.1:3010)
-sudo cp /opt/zomidev/app/docker/nginx/zomidev.initial.conf /etc/nginx/sites-available/zomidev
-
-sudo ln -sf /etc/nginx/sites-available/zomidev /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
+cat /opt/zomidev/app/docker/nginx/wingconcept-proxy.snippet.conf
+nano /opt/wingconcept/docker/nginx/nginx.conf
 ```
 
-Tu sitio existente sigue en su propio archivo (`/etc/nginx/sites-enabled/otro-sitio`). Nginx enruta por `server_name`.
+Pega el bloque HTTP **dentro de** `http { ... }`, justo antes del `}` final. No modifiques los bloques de `wingconcept.com`.
 
-### 4.7 Certificado HTTPS (Let's Encrypt)
-
-Con Nginx en HTTP funcionando:
+Recarga nginx de WingConcept:
 
 ```bash
-sudo certbot --nginx -d zomidev.com -d www.zomidev.com \
-  --redirect --agree-tos -m tu@email.com
-sudo certbot renew --dry-run
+docker exec wingconcept_nginx nginx -t
+docker exec wingconcept_nginx nginx -s reload
+curl -I -H "Host: zomidev.com" http://127.0.0.1
 ```
 
-Certbot crea los certificados y añade el bloque HTTPS. Opcional: sustituye por `zomidev.conf` (headers extra) **después** de Certbot:
+Para cambios futuros de ZomiDev, edita `/opt/zomidev/app/docker/nginx/zomidev-standalone.conf` y reinicia solo ZomiDev:
 
 ```bash
-sudo cp /opt/zomidev/app/docker/nginx/zomidev.conf /etc/nginx/sites-available/zomidev
-sudo nginx -t && sudo systemctl reload nginx
+docker compose -p zomidev -f docker-compose.prod.yml restart nginx
 ```
 
-Con Cloudflare en **Full (strict)**, el origen (VPS) debe tener certificado válido — Certbot lo resuelve.
+### 4.7 Certificado HTTPS para zomidev.com
+
+Con el bloque HTTP funcionando:
+
+```bash
+docker exec wingconcept_certbot certbot certonly --webroot \
+  -w /var/www/certbot \
+  -d zomidev.com -d www.zomidev.com \
+  --agree-tos -m tu@email.com
+```
+
+Descomenta y añade el bloque HTTPS del snippet (`wingconcept-proxy.snippet.conf`), recarga:
+
+```bash
+docker exec wingconcept_nginx nginx -t && docker exec wingconcept_nginx nginx -s reload
+```
 
 ---
 
@@ -413,7 +428,7 @@ docker image prune -f
 → Cloudflare SSL debe ser Full (strict); `ENVIRONMENT=production` en backend; dominio debe ser HTTPS.
 
 **Conflicto de puerto con otro sitio**
-→ Cambia `ZOMIDEV_FRONTEND_PORT` en `docker/.env` y en nginx.
+→ Cambia `ZOMIDEV_NGINX_PORT` en `docker/.env` y el `172.17.0.1:8080` en `wingconcept-proxy.snippet.conf`.
 
 **ZomiDev aparece en WingConcept (o al revés)**
 → Ambos proyectos tenían el mismo nombre Docker Compose (`docker`) porque viven en carpetas `docker/`. Al hacer `up` en ZomiDev se recreaban contenedores de WingConcept. Solución:
@@ -424,9 +439,9 @@ docker compose -p wingconcept up -d
 
 # ZomiDev — usa docker-compose.prod.yml (incluye name: zomidev):
 cd /opt/zomidev/app/docker
-docker compose -f docker-compose.prod.yml --env-file .env up -d
+docker compose -p zomidev -f docker-compose.prod.yml --env-file .env up -d
 ```
-Nunca ejecutes `docker compose up` en ZomiDev sin `-f docker-compose.prod.yml`.
+Nunca ejecutes `docker compose up` en ZomiDev sin `-p zomidev` ni `-f docker-compose.prod.yml`.
 
 ---
 

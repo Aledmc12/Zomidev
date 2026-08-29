@@ -6,6 +6,10 @@
 #   cp .env.example .env          # editar REDIS_PASSWORD
 #   cp ../backend/.env.production.example ../backend/.env.production
 #   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+#
+# IMPORTANTE: `name: zomidev` evita colisionar con WingConcept (ambos usan carpeta docker/).
+
+name: zomidev
 
 services:
   redis:

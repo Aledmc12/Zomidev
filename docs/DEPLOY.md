@@ -415,6 +415,19 @@ docker image prune -f
 **Conflicto de puerto con otro sitio**
 → Cambia `ZOMIDEV_FRONTEND_PORT` en `docker/.env` y en nginx.
 
+**ZomiDev aparece en WingConcept (o al revés)**
+→ Ambos proyectos tenían el mismo nombre Docker Compose (`docker`) porque viven en carpetas `docker/`. Al hacer `up` en ZomiDev se recreaban contenedores de WingConcept. Solución:
+```bash
+# WingConcept — siempre desde su carpeta, con proyecto explícito:
+cd /opt/wingconcept/docker
+docker compose -p wingconcept up -d
+
+# ZomiDev — usa docker-compose.prod.yml (incluye name: zomidev):
+cd /opt/zomidev/app/docker
+docker compose -f docker-compose.prod.yml --env-file .env up -d
+```
+Nunca ejecutes `docker compose up` en ZomiDev sin `-f docker-compose.prod.yml`.
+
 ---
 
 ## Contacto / soporte

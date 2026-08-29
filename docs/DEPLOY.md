@@ -82,19 +82,27 @@ En GitHub → **Settings → Branches** → proteger `main`:
 
 ### 2.1 Connection string
 
-En Supabase → **Project Settings → Database → Connection string → URI**
+En Supabase → **Project Settings → Database → Connection string**.
 
-Añade siempre SSL:
+**En el VPS (Contabo, sin IPv6)** no uses la conexion **Direct** (`db.xxx.supabase.co`): solo tiene IPv6 y falla con `Network is unreachable`.
+
+Usa **Session pooler** (Method: *Session pooler*, puerto **5432**):
+
+```
+postgresql://postgres.clowsffrfsxxbvrytppv:TU_PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres?sslmode=require
+```
+
+- Usuario: `postgres.clowsffrfsxxbvrytppv` (incluye el project ref)
+- Host: copialo tal cual del dashboard (`aws-0-REGION.pooler.supabase.com`)
+- Password: la de **Database password** del proyecto (no la anon/service key)
+
+Para desarrollo local en Mac (con IPv6) puedes usar Direct:
 
 ```
 postgresql://postgres:TU_PASSWORD@db.clowsffrfsxxbvrytppv.supabase.co:5432/postgres?sslmode=require
 ```
 
-> Para muchas conexiones concurrentes, usa el **pooler** (puerto 6543) en lugar de 5432.
-
-> En VPS/Docker **sin IPv6**, el backend y Alembic fuerzan IPv4 automaticamente (`hostaddr`).
-> Si aun falla la conexion, usa el **Session pooler** de Supabase (compatible IPv4):
-> `postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres?sslmode=require`
+> **Transaction pooler** (puerto 6543) es para serverless; para este backend usa **Session pooler** (5432).
 
 ### 2.2 Migraciones (desde tu Mac, una vez)
 

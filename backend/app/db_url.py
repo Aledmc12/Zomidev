@@ -95,11 +95,17 @@ def prepare_database_urls(raw_url: str) -> PreparedDatabaseUrls:
     ipv4 = resolve_ipv4(hostname) if hostname else None
 
     if hostname and "supabase.co" in hostname and not ipv4:
-        logger.warning(
-            "No se encontro registro A (IPv4) para %s. "
-            "Si la conexion falla en Docker, usa el Session pooler de Supabase.",
-            hostname,
-        )
+        if hostname.startswith("db."):
+            logger.error(
+                "Host %s no tiene IPv4 (solo IPv6). En VPS usa Session pooler: "
+                "postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres",
+                hostname,
+            )
+        else:
+            logger.warning(
+                "No se encontro registro A (IPv4) para %s.",
+                hostname,
+            )
 
     sync_pairs = list(query_pairs)
     if ipv4 and hostname and not any(key == "hostaddr" for key, _ in sync_pairs):

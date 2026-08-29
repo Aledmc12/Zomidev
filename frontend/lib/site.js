@@ -10,12 +10,12 @@ export function getApiBase() {
   if (typeof window !== 'undefined') {
     return '/api/v1'
   }
-  const backend = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:8001'
+  const backend = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
   return `${backend.replace(/\/$/, '')}/api/v1`
 }
 
 export function getBackendUrl() {
-  return (process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:8001').replace(/\/$/, '')
+  return (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001').replace(/\/$/, '')
 }
 
 export function assertApiConfigured() {

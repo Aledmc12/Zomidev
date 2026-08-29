@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 
-const BACKEND = (process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:8001').replace(/\/$/, '')
+function getBackendBase() {
+  return (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001').replace(/\/$/, '')
+}
 
 function rewriteSetCookie(cookie) {
   return cookie
@@ -11,7 +13,7 @@ function rewriteSetCookie(cookie) {
 async function proxyRequest(request, pathSegments) {
   const path = pathSegments.join('/')
   const search = request.nextUrl.search
-  const targetUrl = `${BACKEND}/api/v1/${path}${search}`
+  const targetUrl = `${getBackendBase()}/api/v1/${path}${search}`
 
   const headers = new Headers()
   const contentType = request.headers.get('content-type')

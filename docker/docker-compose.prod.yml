@@ -77,8 +77,9 @@ services:
     volumes:
       - ./nginx/zomidev-standalone.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
-      # Solo localhost — WingConcept nginx hace proxy aquí (default 8080).
-      - "127.0.0.1:${ZOMIDEV_NGINX_PORT:-8080}:8080"
+      # Publicar en docker0 (172.17.0.1) para que wingconcept_nginx pueda hacer proxy.
+      # 127.0.0.1 solo funciona desde el host, NO desde otros contenedores Docker.
+      - "${ZOMIDEV_NGINX_BIND:-172.17.0.1}:${ZOMIDEV_NGINX_PORT:-8080}:8080"
     depends_on:
       - frontend
     networks:

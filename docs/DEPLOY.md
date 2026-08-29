@@ -30,7 +30,7 @@ Cloudflare (DNS + WAF + bots + SSL edge)
    ▼
 VPS — wingconcept_nginx (80/443, multi-site por server_name)
    ├── wingconcept.com  → frontend WingConcept (Docker interno)
-   └── zomidev.com      → 127.0.0.1:8080
+   └── zomidev.com      → 172.17.0.1:8080 (docker0, NO 127.0.0.1)
                                     │
                                     ▼
                           zomidev_nginx (Docker, puerto 8080)
@@ -426,6 +426,16 @@ docker image prune -f
 ---
 
 ## Solución de problemas
+
+**504 Gateway Timeout (Cloudflare) pero `curl 127.0.0.1:8080` funciona**
+→ ZomiDev nginx estaba en `127.0.0.1:8080` y WingConcept (contenedor) no puede alcanzar el loopback del host. Usa `ZOMIDEV_NGINX_BIND=172.17.0.1` en `docker/.env` y recrea nginx:
+```bash
+ip -4 addr show docker0 | grep inet   # confirmar IP (suele ser 172.17.0.1)
+# docker/.env → ZOMIDEV_NGINX_BIND=172.17.0.1
+docker compose -p zomidev -f docker-compose.prod.yml up -d nginx
+docker exec wingconcept_nginx wget -qO- --timeout=5 http://172.17.0.1:8080/ | head -c 100
+```
+→ Si accedes por **HTTPS**, descomenta el bloque HTTPS en `wingconcept-proxy.snippet.conf` y obtén certificado con certbot.
 
 **502 Bad Gateway**
 → `docker compose logs frontend` — verifica que el contenedor esté arriba y el puerto en nginx coincida.

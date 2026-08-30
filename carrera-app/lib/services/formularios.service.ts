@@ -1,6 +1,5 @@
 import type { FormularioVehiculo } from '@/lib/models/FormularioVehiculo'
 import { isProductionFormNumber, FORM_NUMBER_TEST } from '@/lib/form/constants'
-import { getSheetsWebhookUrl } from '@/lib/config'
 import { getSupabaseClient } from '@/lib/services/supabase.client'
 
 const STORAGE_KEY = 'formularios_v1'
@@ -155,19 +154,20 @@ const filterIngresosDisponiblesParaSalida = (formularios: FormularioVehiculo[]) 
 }
 
 const tryPushToSheetsWebhook = async (data: FormularioVehiculo) => {
-  const url = getSheetsWebhookUrl()
-  if (!url) return { ok: false, reason: 'no-webhook' }
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 12000)
-    const response = await fetch(url, {
+    const timeoutId = setTimeout(() => controller.abort(), 15000)
+    const response = await fetch('/api/formularios/sheets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
-    if (!response.ok) return { ok: false, reason: `http-${response.status}` }
+    const result = (await response.json()) as { ok?: boolean; reason?: string }
+    if (!response.ok || !result.ok) {
+      return { ok: false, reason: result.reason || `http-${response.status}` }
+    }
     return { ok: true }
   } catch (e) {
     return { ok: false, reason: e instanceof Error ? e.message : 'fetch-error' }
@@ -218,25 +218,24 @@ export async function sendPdfEmail(form: FormularioVehiculo, emailDestino: strin
   if (!accessToken) throw new Error('Sin sesión activa')
 
   const payload = { email: emailDestino, emails: [emailDestino], form }
+
   const invokeResult = await supabase.functions.invoke('generar-pdf-email', {
     body: payload,
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (!invokeResult.error) return true
 
-  const { getPdfFunctionUrl, getSupabaseAnonKey } = await import('@/lib/config')
-  const resp = await fetch(getPdfFunctionUrl(), {
+  const resp = await fetch('/api/formularios/pdf-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: getSupabaseAnonKey(),
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(payload),
   })
   if (!resp.ok) {
-    const txt = await resp.text()
-    throw new Error(txt || 'Error enviando PDF')
+    const data = (await resp.json().catch(() => ({}))) as { error?: string }
+    throw new Error(data.error || 'Error enviando PDF por correo')
   }
   return true
 }

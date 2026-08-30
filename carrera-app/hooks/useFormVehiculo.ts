@@ -13,6 +13,7 @@ import {
   FORM_DRAFT_KEY,
   FORM_NUMBER_MIN,
   FORM_NUMBER_OPTIONS_COUNT,
+  FORM_NUMBER_TEST,
   FormMode,
   isValidFormNumber,
   LAST_INGRESO_KEY,
@@ -96,8 +97,50 @@ export function useFormVehiculo() {
 
   const fetchNextNumero = useCallback(async () => {
     const sugerencias = await obtenerSugerenciasNumeroFormulario(1, FORM_NUMBER_MIN)
-    return sugerencias[0] || FORM_NUMBER_MIN
+    const first = sugerencias.find((n) => n !== FORM_NUMBER_TEST) ?? sugerencias[0]
+    return first || FORM_NUMBER_MIN
   }, [])
+
+  const resetAfterSave = useCallback(
+    async (savedForm: FormularioVehiculo, savedMode: FormMode) => {
+      localStorage.removeItem(FORM_DRAFT_KEY(savedMode))
+      setPhotoFiles([])
+      setCroquis(null)
+      setVinSearchQuery('')
+      setBateriaEntradaInput('')
+      setBateriaSalidaInput('')
+      setKilometrajeInput('')
+
+      if (savedMode === 'ingreso') {
+        localStorage.setItem(
+          LAST_INGRESO_KEY,
+          JSON.stringify({ savedAt: Date.now(), form: sanitizeForLocalDraft(savedForm) }),
+        )
+        localStorage.removeItem(FORM_DRAFT_KEY('salida'))
+        const salida = buildSalidaFromIngreso(
+          savedForm,
+          Number(savedForm.numeroFormulario || 0),
+          supabaseUrl,
+        )
+        setModoState('salida')
+        setSelectedIngresoId(savedForm.id)
+        setVinSearchQuery(savedForm.datosGenerales.chasis || '')
+        setForm(salida)
+        setBateriaSalidaInput('')
+        await loadIngresosDisponibles()
+      } else {
+        const nextNumero = await fetchNextNumero()
+        setForm(applyDefaultFirmas(buildEmptyForm(nextNumero, 'salida'), 'salida', supabaseUrl))
+        setSelectedIngresoId(null)
+      }
+
+      await loadNumeroOptions()
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    },
+    [fetchNextNumero, loadIngresosDisponibles, loadNumeroOptions, supabaseUrl],
+  )
 
   const switchMode = useCallback(
     async (targetMode: FormMode) => {
@@ -316,22 +359,35 @@ export function useFormVehiculo() {
         },
       }
 
-      await crearFormulario(formFinal)
-      if (modo === 'ingreso') {
-        localStorage.setItem(LAST_INGRESO_KEY, JSON.stringify({ savedAt: Date.now(), form: sanitizeForLocalDraft(formFinal) }))
-      }
+      const saveResult = await crearFormulario(formFinal)
+
       const email = (formFinal.emailDestino || '').trim()
+      let pdfOk = false
+      let pdfError = ''
       if (email) {
-        try { await sendPdfEmail(formFinal, email) } catch { /* optional */ }
+        try {
+          await sendPdfEmail(formFinal, email)
+          pdfOk = true
+        } catch (err) {
+          pdfError = err instanceof Error ? err.message : 'Error PDF'
+        }
       }
-      setMessage({ type: 'ok', text: 'Formulario guardado correctamente.' })
-      setPhotoFiles([])
-      setCroquis(null)
-      try {
-        await switchMode(modo)
-      } catch {
-        /* el formulario ya se guardó */
+
+      const parts = ['Formulario guardado correctamente.']
+      if (saveResult.sheets.ok) {
+        parts.push('Google Sheets: OK.')
+      } else if (saveResult.sheets.reason === 'no-webhook') {
+        parts.push('Sheets: webhook no configurado.')
+      } else {
+        parts.push(`Sheets: falló (${saveResult.sheets.reason}).`)
       }
+      if (email) {
+        parts.push(pdfOk ? 'Correo PDF: enviado.' : `Correo PDF: no enviado${pdfError ? ` (${pdfError})` : ''}.`)
+      }
+
+      setMessage({ type: 'ok', text: parts.join(' ') })
+
+      await resetAfterSave(formFinal, modo)
     } catch (e) {
       const text =
         e instanceof Error
@@ -346,7 +402,7 @@ export function useFormVehiculo() {
     } finally {
       setIsSaving(false)
     }
-  }, [isSaving, form, modo, isIngreso, bateriaEntradaInput, bateriaSalidaInput, photoFiles, croquis, supabaseUrl, loadNumeroOptions, switchMode])
+  }, [isSaving, form, modo, isIngreso, bateriaEntradaInput, bateriaSalidaInput, photoFiles, croquis, supabaseUrl, loadNumeroOptions, resetAfterSave])
 
   return {
     modo, setModo, form, setForm, patchSection, patchBool,

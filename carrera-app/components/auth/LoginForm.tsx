@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser, signIn, signUp } from '@/lib/services/auth.service'
+import { getCurrentUser, signIn } from '@/lib/services/auth.service'
 import { PRIVACY_POLICY_URL } from '@/lib/form/constants'
 import { canAttemptLogin, clearLoginAttempts, recordFailedLogin } from '@/lib/security/rateLimit'
 
@@ -13,7 +13,6 @@ export default function LoginForm() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loading, setLoading] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
   const [error, setError] = useState('')
@@ -53,14 +52,9 @@ export default function LoginForm() {
     }
     setLoading(true)
     try {
-      if (mode === 'login') {
-        await signIn(email.trim(), password)
-        clearLoginAttempts()
-        router.replace('/formulario')
-      } else {
-        await signUp(email.trim(), password)
-        setError('Registro exitoso. Revisa tu correo para confirmar.')
-      }
+      await signIn(email.trim(), password)
+      clearLoginAttempts()
+      router.replace('/formulario')
     } catch (err) {
       recordFailedLogin()
       setError(err instanceof Error ? err.message : 'Error de autenticación')
@@ -74,7 +68,7 @@ export default function LoginForm() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <img src="/assets/logo.png" alt="Carrera Arango" className="mx-auto h-16 w-auto object-contain" />
-          <h1 className="mt-6 text-2xl font-bold">{mode === 'login' ? 'Iniciar sesión' : 'Registrarse'}</h1>
+          <h1 className="mt-6 text-2xl font-bold">Iniciar sesión</h1>
           <p className="mt-1 text-sm text-gray-500">App Carrera Arango — Formularios vehículos</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -84,7 +78,7 @@ export default function LoginForm() {
           </div>
           <div>
             <label htmlFor="password" className="mb-1 block text-sm text-gray-600">Contraseña</label>
-            <input id="password" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
           <button
@@ -92,10 +86,7 @@ export default function LoginForm() {
             disabled={loading}
             className="w-full rounded-lg bg-carrera-red py-3 font-semibold text-white disabled:opacity-60"
           >
-            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarse'}
-          </button>
-          <button type="button" className="w-full text-sm text-gray-600 underline" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-            {mode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+            {loading ? 'Cargando...' : 'Entrar'}
           </button>
         </form>
         <p className="mt-6 text-center text-sm">

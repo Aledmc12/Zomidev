@@ -18,3 +18,8 @@ export function getPdfFunctionUrl() {
 export function getSiteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001').replace(/\/$/, '')
 }
+
+/** Registro público deshabilitado por defecto; solo login de cuentas existentes. */
+export function isSignupEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_SIGNUP_ENABLED === 'true'
+}

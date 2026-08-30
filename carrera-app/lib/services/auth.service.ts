@@ -1,6 +1,10 @@
 import { getSupabaseClient } from '@/lib/services/supabase.client'
+import { isSignupEnabled } from '@/lib/config'
 
 export async function signUp(email: string, password: string) {
+  if (!isSignupEnabled()) {
+    throw new Error('El registro de nuevas cuentas no está disponible.')
+  }
   const supabase = getSupabaseClient()
   if (!supabase) throw new Error('Supabase no configurado')
   const { data, error } = await supabase.auth.signUp({ email, password })

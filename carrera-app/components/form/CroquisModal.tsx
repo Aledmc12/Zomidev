@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import SignatureCanvas from 'react-signature-canvas'
 
 type Props = {
@@ -12,6 +12,15 @@ type Props = {
 export default function CroquisModal({ open, onClose, onSave }: Props) {
   const sigRef = useRef<SignatureCanvas>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
 
   if (!open) return null
 
@@ -38,7 +47,10 @@ export default function CroquisModal({ open, onClose, onSave }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0 md:items-center md:p-4">
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0 md:items-center md:p-4"
+      style={{ touchAction: 'none' }}
+    >
       <div className="max-h-[95vh] w-full max-w-3xl overflow-auto rounded-t-2xl bg-white p-4 md:rounded-2xl">
         <h3 className="mb-3 font-bold">Croquis del vehículo</h3>
         <div className="relative mx-auto max-w-full">

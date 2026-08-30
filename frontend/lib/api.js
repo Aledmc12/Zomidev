@@ -16,6 +16,12 @@ function isPublicPath(path) {
   return path.startsWith('/public/portfolio/')
 }
 
+function shouldRedirectToLogin() {
+  if (typeof window === 'undefined') return false
+  const path = window.location.pathname
+  return !['/login', '/olvide-contrasena', '/recuperar-contrasena'].some((p) => path.startsWith(p))
+}
+
 async function parseErrorResponse(res) {
   try {
     const data = await res.json()
@@ -42,7 +48,7 @@ function buildQuery(params = {}) {
 }
 
 async function request(path, options = {}) {
-  const { skipAuth = false, ...fetchOptions } = options
+  const { skipAuth = false, suppressAuthRedirect = false, ...fetchOptions } = options
   const isPublic = skipAuth || isPublicPath(path)
 
   let res
@@ -63,7 +69,7 @@ async function request(path, options = {}) {
     }
   }
 
-  if (res.status === 401 && !isPublic && path !== '/auth/refresh') {
+  if (res.status === 401 && !isPublic && path !== '/auth/refresh' && !suppressAuthRedirect) {
     try {
       const refreshRes = await fetch('/api/v1/auth/refresh', {
         method: 'POST',
@@ -86,7 +92,7 @@ async function request(path, options = {}) {
     } catch {
       // fall through
     }
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && shouldRedirectToLogin()) {
       window.location.href = '/login?session_expired=true'
     }
     throw { status: 401, detail: 'Sesion expirada' }
@@ -138,7 +144,7 @@ export const api = {
   auth: {
     login: (data) => request('/auth/login', { method: 'POST', body: JSON.stringify(data), skipAuth: true }),
     refresh: () => request('/auth/refresh', { method: 'POST', skipAuth: true }),
-    me: () => request('/auth/me'),
+    me: () => request('/auth/me', { suppressAuthRedirect: true }),
     logout: () => request('/auth/logout', { method: 'POST' }),
     forgotPassword: (data) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify(data), skipAuth: true }),
     resetPassword: (data) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(data), skipAuth: true }),

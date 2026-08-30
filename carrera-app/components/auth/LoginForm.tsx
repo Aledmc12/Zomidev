@@ -1,19 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { signIn, signUp } from '@/lib/services/auth.service'
+import { useRouter } from 'next/navigation'
+import { getCurrentUser, signIn, signUp } from '@/lib/services/auth.service'
 import { PRIVACY_POLICY_URL } from '@/lib/form/constants'
 import { canAttemptLogin, clearLoginAttempts, recordFailedLogin } from '@/lib/security/rateLimit'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function LoginForm() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loading, setLoading] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    getCurrentUser()
+      .then((user) => {
+        if (user) router.replace('/formulario')
+      })
+      .catch(() => {})
+      .finally(() => setCheckingSession(false))
+  }, [router])
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-gray-500">
+        Cargando...
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +56,7 @@ export default function LoginForm() {
       if (mode === 'login') {
         await signIn(email.trim(), password)
         clearLoginAttempts()
-        window.location.href = '/formulario'
+        router.replace('/formulario')
       } else {
         await signUp(email.trim(), password)
         setError('Registro exitoso. Revisa tu correo para confirmar.')

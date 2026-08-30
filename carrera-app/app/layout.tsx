@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Carrera Arango — Formularios',
   description: 'Formularios de ingreso y salida de vehículos — Carrera Arango SAS',
   robots: { index: false, follow: false },
+  icons: { icon: '/assets/logo.png', apple: '/assets/logo.png' },
 }
 
 export const viewport: Viewport = {

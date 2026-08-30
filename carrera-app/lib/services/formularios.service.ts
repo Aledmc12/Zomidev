@@ -1,5 +1,5 @@
 import type { FormularioVehiculo } from '@/lib/models/FormularioVehiculo'
-import { isProductionFormNumber, FORM_NUMBER_TEST } from '@/lib/form/constants'
+import { isProductionFormNumber, FORM_NUMBER_MIN, FORM_NUMBER_TEST } from '@/lib/form/constants'
 import { getSupabaseClient } from '@/lib/services/supabase.client'
 
 const STORAGE_KEY = 'formularios_v1'
@@ -97,6 +97,7 @@ export const numeroFormularioExisteEnTipo = async (
   numero: number,
   tipo: 'ingreso' | 'salida',
 ): Promise<boolean> => {
+  if (numero === FORM_NUMBER_TEST) return false
   if (!loaded) loadFromStorage()
   if (registros.some((r) => Number(r.numeroFormulario) === Number(numero) && r.tipoFormulario === tipo)) {
     return true
@@ -144,12 +145,13 @@ const filterIngresosDisponiblesParaSalida = (formularios: FormularioVehiculo[]) 
     formularios
       .filter((f) => f?.tipoFormulario === 'salida')
       .map((f) => getNumeroFormulario(f))
-      .filter((n) => n >= 0),
+      .filter((n) => n >= FORM_NUMBER_MIN),
   )
   return formularios.filter((f) => {
     if (!f || f.tipoFormulario !== 'ingreso') return false
     const numero = getNumeroFormulario(f)
-    return numero >= 0 && !salidasPorNumero.has(numero)
+    if (numero === FORM_NUMBER_TEST) return true
+    return numero >= FORM_NUMBER_MIN && !salidasPorNumero.has(numero)
   })
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormularioVehiculo } from '@/lib/models/FormularioVehiculo'
 import {
   applyDefaultFirmas,
@@ -49,6 +49,11 @@ export function useFormVehiculo() {
   const [croquis, setCroquis] = useState<string | null>(null)
   const [photoFiles, setPhotoFiles] = useState<(File | string)[]>([])
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const formNumeroRef = useRef(form.numeroFormulario)
+
+  useEffect(() => {
+    formNumeroRef.current = form.numeroFormulario
+  }, [form.numeroFormulario])
 
   const isIngreso = modo === 'ingreso'
   const vinSearchNormalized = vinSearchQuery.trim().toLowerCase()
@@ -66,7 +71,7 @@ export function useFormVehiculo() {
     setLoadingNumeroOptions(true)
     try {
       const sugerencias = await obtenerSugerenciasNumeroFormulario(FORM_NUMBER_OPTIONS_COUNT, FORM_NUMBER_MIN)
-      const actual = Number(form.numeroFormulario || 0)
+      const actual = Number(formNumeroRef.current || 0)
       const merged = actual > 0 && !sugerencias.includes(actual) ? [actual, ...sugerencias] : sugerencias
       setNumeroOptions(Array.from(new Set(merged)).sort((a, b) => a - b))
     } catch {
@@ -74,7 +79,7 @@ export function useFormVehiculo() {
     } finally {
       setLoadingNumeroOptions(false)
     }
-  }, [form.numeroFormulario])
+  }, [])
 
   const loadIngresosDisponibles = useCallback(async () => {
     setLoadingIngresos(true)
@@ -98,6 +103,10 @@ export function useFormVehiculo() {
       const nextNumero = await fetchNextNumero()
       setModoState(targetMode)
       if (targetMode !== 'salida') setSelectedIngresoId(null)
+
+      if (targetMode === 'salida') {
+        loadIngresosDisponibles()
+      }
 
       const draftKey = FORM_DRAFT_KEY(targetMode)
       try {
@@ -130,7 +139,7 @@ export function useFormVehiculo() {
       }
       setForm(applyDefaultFirmas(buildEmptyForm(nextNumero, targetMode), targetMode, supabaseUrl))
     },
-    [fetchNextNumero, supabaseUrl],
+    [fetchNextNumero, loadIngresosDisponibles, supabaseUrl],
   )
 
   const seleccionarIngresoBase = useCallback(
@@ -158,7 +167,9 @@ export function useFormVehiculo() {
       setIsHydrating(false)
     }
     hydrate()
-  }, [loadNumeroOptions, switchMode])
+    // Solo al montar — igual que la app móvil
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!isHydrating) loadNumeroOptions()
@@ -169,6 +180,15 @@ export function useFormVehiculo() {
       loadIngresosDisponibles()
     }
   }, [modo, ingresosDisponibles.length, loadingIngresos, loadIngresosDisponibles])
+
+  const setModo = useCallback(
+    (targetMode: FormMode) => {
+      if (targetMode === modo || isSaving) return
+      setVinSearchQuery('')
+      switchMode(targetMode)
+    },
+    [modo, isSaving, switchMode],
+  )
 
   useEffect(() => {
     if (isHydrating) return
@@ -310,7 +330,7 @@ export function useFormVehiculo() {
   }, [isSaving, form, modo, isIngreso, bateriaEntradaInput, bateriaSalidaInput, photoFiles, croquis, supabaseUrl, loadNumeroOptions, switchMode])
 
   return {
-    modo, setModo: switchMode, form, setForm, patchSection, patchBool,
+    modo, setModo, form, setForm, patchSection, patchBool,
     isSaving, isHydrating, isIngreso,
     bateriaEntradaInput, setBateriaEntradaInput,
     bateriaSalidaInput, setBateriaSalidaInput,

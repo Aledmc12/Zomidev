@@ -120,10 +120,20 @@ docker compose -p carrera -f docker-compose.carrera.yml --env-file .env.carrera 
 Verificar:
 
 ```bash
+docker compose -p carrera ps
+docker compose -p carrera logs nginx --tail 30
+docker compose -p carrera logs frontend --tail 30
+ss -tlnp | grep 8081 || netstat -tlnp | grep 8081
 curl -s -o /dev/null -w "%{http_code}" http://172.17.0.1:8081/login
 # Esperado: 200
-docker compose -p carrera ps
 ```
+
+### Si `curl: (7) Failed to connect to 172.17.0.1 port 8081`
+
+1. **El stack no está levantado** — ejecuta el `docker compose ... up -d --build` de arriba.
+2. **Falta `.env.carrera`** — el build necesita `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. **Nginx no arrancó** — revisa logs; las directivas `limit_req_zone` deben estar en `00-rate-limit.conf` (no dentro del bloque `server`).
+4. **Estás en tu Mac local** — `172.17.0.1` solo funciona en el **VPS Linux** con Docker; en local usa `curl http://127.0.0.1:8081/login` tras `CARRERA_NGINX_BIND=127.0.0.1`.
 
 ### 3. WingConcept nginx — proxy subdominio
 

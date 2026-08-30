@@ -136,7 +136,7 @@ export default function FormVehiculo() {
               <option value="">{vm.loadingIngresos ? 'Cargando ingresos...' : 'Elegir ingreso para salida'}</option>
               {vm.ingresosDisponibles.map((item) => (
                 <option key={item.id} value={item.id}>
-                  No. {item.numeroFormulario} — {item.datosGenerales.chasis} — {item.datosGenerales.cliente}
+                  No. {item.numeroFormulario} — {item.datosGenerales.chasis} — {item.datosGenerales.marca}
                 </option>
               ))}
             </select>
@@ -178,14 +178,6 @@ export default function FormVehiculo() {
         <div className="mb-3 md:col-span-1">
           <label className="mb-1 block text-sm">Empresa transportadora</label>
           <input value={dg.empresa} onChange={(e) => setDg({ empresa: e.target.value })} className="w-full" />
-        </div>
-        <div className="mb-3 md:col-span-1">
-          <label className="mb-1 block text-sm">Vendedor</label>
-          <input value={dg.vendedor} onChange={(e) => setDg({ vendedor: e.target.value })} className="w-full" />
-        </div>
-        <div className="mb-3 md:col-span-1">
-          <label className="mb-1 block text-sm">Cliente</label>
-          <input value={dg.cliente} onChange={(e) => setDg({ cliente: e.target.value })} className="w-full" />
         </div>
         <div className="mb-3 md:col-span-1">
           <label className="mb-1 block text-sm">Tipo vehículo</label>

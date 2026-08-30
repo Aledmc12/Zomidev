@@ -5,6 +5,8 @@ export type FormMode = FormularioTipo
 export const EMPRESA_VERIFICA = 'Carrera Arango SAS'
 export const EMAIL_DESTINO_ANA = 'ana.arango@carrera-arango.com'
 export const FORM_NUMBER_MIN = 1
+/** Primer número visible en el selector (0 reservado pruebas, 1 ya usado/oculto). */
+export const FORM_NUMBER_UI_MIN = 2
 /** Número reservado para pruebas — reutilizable, no afecta la numeración real. */
 export const FORM_NUMBER_TEST = 0
 export const FORM_NUMBER_OPTIONS_COUNT = 120
@@ -36,6 +38,10 @@ export const today = () => new Date().toISOString().slice(0, 10)
 
 export function isProductionFormNumber(n: number): boolean {
   return Number.isFinite(n) && n >= FORM_NUMBER_MIN
+}
+
+export function isVisibleFormNumberOption(n: number): boolean {
+  return Number.isFinite(n) && n >= FORM_NUMBER_UI_MIN
 }
 
 export function isTestFormNumber(n: number): boolean {

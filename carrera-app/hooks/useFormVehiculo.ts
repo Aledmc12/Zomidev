@@ -11,11 +11,11 @@ import {
 } from '@/lib/form/buildEmptyForm'
 import {
   FORM_DRAFT_KEY,
-  FORM_NUMBER_MIN,
   FORM_NUMBER_OPTIONS_COUNT,
-  FORM_NUMBER_TEST,
+  FORM_NUMBER_UI_MIN,
   FormMode,
   isValidFormNumber,
+  isVisibleFormNumberOption,
   LAST_INGRESO_KEY,
 } from '@/lib/form/constants'
 import { getSupabaseUrl, getSupabaseAnonKey } from '@/lib/config'
@@ -37,7 +37,7 @@ export function useFormVehiculo() {
   const [isSaving, setIsSaving] = useState(false)
   const [isHydrating, setIsHydrating] = useState(true)
   const [form, setForm] = useState<FormularioVehiculo>(() =>
-    applyDefaultFirmas(buildEmptyForm(FORM_NUMBER_MIN, 'ingreso'), 'ingreso', supabaseUrl),
+    applyDefaultFirmas(buildEmptyForm(FORM_NUMBER_UI_MIN, 'ingreso'), 'ingreso', supabaseUrl),
   )
   const [bateriaEntradaInput, setBateriaEntradaInput] = useState('')
   const [bateriaSalidaInput, setBateriaSalidaInput] = useState('')
@@ -72,10 +72,14 @@ export function useFormVehiculo() {
   const loadNumeroOptions = useCallback(async () => {
     setLoadingNumeroOptions(true)
     try {
-      const sugerencias = await obtenerSugerenciasNumeroFormulario(FORM_NUMBER_OPTIONS_COUNT, FORM_NUMBER_MIN)
+      const sugerencias = await obtenerSugerenciasNumeroFormulario(FORM_NUMBER_OPTIONS_COUNT, FORM_NUMBER_UI_MIN)
       const actual = Number(formNumeroRef.current || 0)
       const merged = actual > 0 && !sugerencias.includes(actual) ? [actual, ...sugerencias] : sugerencias
-      setNumeroOptions(Array.from(new Set(merged)).sort((a, b) => a - b))
+      setNumeroOptions(
+        Array.from(new Set(merged))
+          .filter(isVisibleFormNumberOption)
+          .sort((a, b) => a - b),
+      )
     } catch {
       setNumeroOptions([])
     } finally {
@@ -96,9 +100,8 @@ export function useFormVehiculo() {
   }, [])
 
   const fetchNextNumero = useCallback(async () => {
-    const sugerencias = await obtenerSugerenciasNumeroFormulario(1, FORM_NUMBER_MIN)
-    const first = sugerencias.find((n) => n !== FORM_NUMBER_TEST) ?? sugerencias[0]
-    return first || FORM_NUMBER_MIN
+    const sugerencias = await obtenerSugerenciasNumeroFormulario(1, FORM_NUMBER_UI_MIN)
+    return sugerencias[0] || FORM_NUMBER_UI_MIN
   }, [])
 
   const resetAfterSave = useCallback(

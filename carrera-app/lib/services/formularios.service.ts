@@ -1,5 +1,5 @@
 import type { FormularioVehiculo } from '@/lib/models/FormularioVehiculo'
-import { isProductionFormNumber, FORM_NUMBER_MIN, FORM_NUMBER_TEST } from '@/lib/form/constants'
+import { isProductionFormNumber, FORM_NUMBER_MIN, FORM_NUMBER_TEST, FORM_NUMBER_UI_MIN } from '@/lib/form/constants'
 import { getSupabaseClient } from '@/lib/services/supabase.client'
 
 const STORAGE_KEY = 'formularios_v1'
@@ -38,13 +38,15 @@ const getMaxNumeroRemoto = async (): Promise<number> => {
   }
 }
 
-export const obtenerSugerenciasNumeroFormulario = async (cantidad = 100, minimo = 1): Promise<number[]> => {
+export const obtenerSugerenciasNumeroFormulario = async (cantidad = 100, minimo = FORM_NUMBER_UI_MIN): Promise<number[]> => {
   if (!loaded) loadFromStorage()
   const maxLocal = getMaxNumeroLocal()
   const maxRemoto = await getMaxNumeroRemoto()
-  const base = Math.max(minimo - 1, maxLocal, maxRemoto)
-  const produccion = Array.from({ length: Math.max(1, cantidad) }, (_, i) => base + i + 1)
-  return [FORM_NUMBER_TEST, ...produccion]
+  const startMin = Math.max(FORM_NUMBER_UI_MIN, minimo)
+  const base = Math.max(startMin - 1, maxLocal, maxRemoto)
+  return Array.from({ length: Math.max(1, cantidad) }, (_, i) => base + i + 1).filter(
+    (n) => n >= FORM_NUMBER_UI_MIN,
+  )
 }
 
 const sanitizeForLocalCache = (item: FormularioVehiculo): FormularioVehiculo => ({

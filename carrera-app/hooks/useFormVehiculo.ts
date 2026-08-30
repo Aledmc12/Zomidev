@@ -14,6 +14,7 @@ import {
   FORM_NUMBER_MIN,
   FORM_NUMBER_OPTIONS_COUNT,
   FormMode,
+  isValidFormNumber,
   LAST_INGRESO_KEY,
 } from '@/lib/form/constants'
 import { getSupabaseUrl } from '@/lib/config'
@@ -241,8 +242,8 @@ export function useFormVehiculo() {
       setMessage({ type: 'err', text: 'Marca y ciudad son obligatorias.' })
       return
     }
-    if (!Number.isFinite(form.numeroFormulario) || form.numeroFormulario < FORM_NUMBER_MIN) {
-      setMessage({ type: 'err', text: `Selecciona un número de formulario válido (mínimo ${FORM_NUMBER_MIN}).` })
+    if (!isValidFormNumber(form.numeroFormulario)) {
+      setMessage({ type: 'err', text: 'Selecciona un número de formulario válido.' })
       return
     }
 

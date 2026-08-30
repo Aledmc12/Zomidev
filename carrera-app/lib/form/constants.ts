@@ -5,6 +5,10 @@ export type FormMode = FormularioTipo
 export const EMPRESA_VERIFICA = 'Carrera Arango SAS'
 export const EMAIL_DESTINO_ANA = 'ana.arango@carrera-arango.com'
 export const FORM_NUMBER_MIN = 1
+/** Número reservado para pruebas; no afecta el siguiente número de producción. */
+export const FORM_NUMBER_TEST = 0
+/** Números >= 9000 son prueba; no afectan la secuencia real (1…N). */
+export const FORM_NUMBER_TEST_MIN = 9000
 export const FORM_NUMBER_OPTIONS_COUNT = 120
 export const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000
 export const FORM_DRAFT_KEY = (mode: FormMode) => `form_vehiculo_draft_${mode}`
@@ -31,6 +35,18 @@ export function getFirmaVerificaUrl(supabaseUrl: string) {
 }
 
 export const today = () => new Date().toISOString().slice(0, 10)
+
+export function isProductionFormNumber(n: number): boolean {
+  return Number.isFinite(n) && n >= FORM_NUMBER_MIN && n < FORM_NUMBER_TEST_MIN
+}
+
+export function isTestFormNumber(n: number): boolean {
+  return Number.isFinite(n) && (n === FORM_NUMBER_TEST || n >= FORM_NUMBER_TEST_MIN)
+}
+
+export function isValidFormNumber(n: number): boolean {
+  return isProductionFormNumber(n) || isTestFormNumber(n)
+}
 
 export type BoolFieldDef = { key: string; label: string }
 

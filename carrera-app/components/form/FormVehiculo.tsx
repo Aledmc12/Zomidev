@@ -13,6 +13,8 @@ import {
   CITIES_CO,
   COMBUSTIBLE_OPTIONS,
   EMAIL_DESTINO_ANA,
+  FORM_NUMBER_TEST,
+  FORM_NUMBER_TEST_MIN,
   EQUIPO_CARRETERA_FIELDS,
   EQUIPO_EXT_FIELDS,
   INTERIOR_BOOL_FIELDS,
@@ -91,7 +93,13 @@ export default function FormVehiculo() {
           >
             <option value="">{vm.loadingNumeroOptions ? 'Cargando...' : 'Seleccionar'}</option>
             {vm.numeroOptions.map((n) => (
-              <option key={n} value={n}>No. {n}</option>
+              <option key={n} value={n}>
+                {n === FORM_NUMBER_TEST
+                  ? 'No. 0 (solo prueba — no afecta la numeración)'
+                  : n >= FORM_NUMBER_TEST_MIN
+                    ? `No. ${n} (prueba)`
+                    : `No. ${n}`}
+              </option>
             ))}
           </select>
         </div>

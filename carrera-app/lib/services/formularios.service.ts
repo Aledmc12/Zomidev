@@ -1,4 +1,5 @@
 import type { FormularioVehiculo } from '@/lib/models/FormularioVehiculo'
+import { isProductionFormNumber, FORM_NUMBER_TEST } from '@/lib/form/constants'
 import { getSheetsWebhookUrl } from '@/lib/config'
 import { getSupabaseClient } from '@/lib/services/supabase.client'
 
@@ -8,8 +9,43 @@ let registros: FormularioVehiculo[] = []
 let loaded = false
 
 const getNumeroFormulario = (item: Partial<FormularioVehiculo> | null | undefined) => {
-  const n = Number(item?.numeroFormulario || 0)
-  return Number.isFinite(n) && n > 0 ? n : 0
+  const n = Number(item?.numeroFormulario)
+  if (!Number.isFinite(n)) return -1
+  return n
+}
+
+const maxProductionNumero = (numeros: number[]) =>
+  numeros.filter(isProductionFormNumber).reduce((acc, n) => (n > acc ? n : acc), 0)
+
+const getMaxNumeroLocal = () =>
+  maxProductionNumero(registros.map((item) => Number(item?.numeroFormulario ?? NaN)))
+
+const getMaxNumeroRemoto = async (): Promise<number> => {
+  const supabase = getSupabaseClient()
+  if (!supabase) return 0
+  try {
+    const { data, error } = await supabase
+      .from('formularios')
+      .select('data->numeroFormulario')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (error || !data) return 0
+    const numeros = (data as { numeroFormulario?: unknown }[]).map((row) =>
+      Number(row?.numeroFormulario ?? NaN),
+    )
+    return maxProductionNumero(numeros)
+  } catch {
+    return 0
+  }
+}
+
+export const obtenerSugerenciasNumeroFormulario = async (cantidad = 100, minimo = 1): Promise<number[]> => {
+  if (!loaded) loadFromStorage()
+  const maxLocal = getMaxNumeroLocal()
+  const maxRemoto = await getMaxNumeroRemoto()
+  const base = Math.max(minimo - 1, maxLocal, maxRemoto)
+  const produccion = Array.from({ length: Math.max(1, cantidad) }, (_, i) => base + i + 1)
+  return [FORM_NUMBER_TEST, ...produccion]
 }
 
 const sanitizeForLocalCache = (item: FormularioVehiculo): FormularioVehiculo => ({
@@ -56,39 +92,6 @@ export const contarFormularios = async (): Promise<number> => {
   }
   if (!loaded) loadFromStorage()
   return registros.length
-}
-
-const getMaxNumeroLocal = () =>
-  registros.reduce((acc, item) => {
-    const n = Number(item?.numeroFormulario || 0)
-    return Number.isFinite(n) && n > acc ? n : acc
-  }, 0)
-
-const getMaxNumeroRemoto = async (): Promise<number> => {
-  const supabase = getSupabaseClient()
-  if (!supabase) return 0
-  try {
-    const { data, error } = await supabase
-      .from('formularios')
-      .select('data->numeroFormulario')
-      .order('created_at', { ascending: false })
-      .limit(500)
-    if (error || !data) return 0
-    return (data as { numeroFormulario?: unknown }[]).reduce((acc, row) => {
-      const n = Number(row?.numeroFormulario ?? 0)
-      return Number.isFinite(n) && n > acc ? n : acc
-    }, 0)
-  } catch {
-    return 0
-  }
-}
-
-export const obtenerSugerenciasNumeroFormulario = async (cantidad = 100, minimo = 1): Promise<number[]> => {
-  if (!loaded) loadFromStorage()
-  const maxLocal = getMaxNumeroLocal()
-  const maxRemoto = await getMaxNumeroRemoto()
-  const base = Math.max(minimo - 1, maxLocal, maxRemoto)
-  return Array.from({ length: Math.max(1, cantidad) }, (_, i) => base + i + 1)
 }
 
 export const numeroFormularioExisteEnTipo = async (
@@ -142,12 +145,12 @@ const filterIngresosDisponiblesParaSalida = (formularios: FormularioVehiculo[]) 
     formularios
       .filter((f) => f?.tipoFormulario === 'salida')
       .map((f) => getNumeroFormulario(f))
-      .filter((n) => n > 0),
+      .filter((n) => n >= 0),
   )
   return formularios.filter((f) => {
     if (!f || f.tipoFormulario !== 'ingreso') return false
     const numero = getNumeroFormulario(f)
-    return numero > 0 && !salidasPorNumero.has(numero)
+    return numero >= 0 && !salidasPorNumero.has(numero)
   })
 }
 

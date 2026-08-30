@@ -17,7 +17,7 @@ import {
   isValidFormNumber,
   LAST_INGRESO_KEY,
 } from '@/lib/form/constants'
-import { getSupabaseUrl } from '@/lib/config'
+import { getSupabaseUrl, getSupabaseAnonKey } from '@/lib/config'
 import { getCurrentUser } from '@/lib/services/auth.service'
 import {
   clearLocalFormularios,
@@ -225,14 +225,19 @@ export function useFormVehiculo() {
 
   async function uploadSignature(dataUrl: string | undefined, tipo: string, formId: string) {
     if (!dataUrl || dataUrl.length < 10) return ''
-    if (dataUrl.startsWith('http')) return dataUrl
-    const blob = await dataUrlToBlob(dataUrl.startsWith('data:') ? dataUrl : `data:image/png;base64,${dataUrl}`)
+    if (dataUrl.startsWith('http://') || dataUrl.startsWith('https://')) return dataUrl
+    if (!dataUrl.startsWith('data:')) return ''
+    const blob = await dataUrlToBlob(dataUrl)
     return uploadToStorage('fotos', `firmas/${formId}/${tipo}-${Date.now()}.png`, blob)
   }
 
   const guardar = useCallback(async () => {
     if (isSaving) return
     setMessage(null)
+    if (!getSupabaseUrl() || !getSupabaseAnonKey()) {
+      setMessage({ type: 'err', text: 'Supabase no configurado. Revisa las variables en el servidor.' })
+      return
+    }
     const user = await getCurrentUser()
     if (!user) {
       setMessage({ type: 'err', text: 'Debes iniciar sesión para guardar.' })
@@ -322,9 +327,22 @@ export function useFormVehiculo() {
       setMessage({ type: 'ok', text: 'Formulario guardado correctamente.' })
       setPhotoFiles([])
       setCroquis(null)
-      await switchMode(modo)
+      try {
+        await switchMode(modo)
+      } catch {
+        /* el formulario ya se guardó */
+      }
     } catch (e) {
-      setMessage({ type: 'err', text: e instanceof Error ? e.message : 'Error al guardar.' })
+      const text =
+        e instanceof Error
+          ? e.message
+          : 'Error al guardar.'
+      setMessage({
+        type: 'err',
+        text: text === 'Load failed' || text === 'Failed to fetch'
+          ? 'Error de conexión con Supabase. Revisa la red o la configuración del proyecto.'
+          : text,
+      })
     } finally {
       setIsSaving(false)
     }

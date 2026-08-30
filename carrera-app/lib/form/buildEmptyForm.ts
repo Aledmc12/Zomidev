@@ -184,7 +184,9 @@ export function applyDefaultFirmas(f: FormularioVehiculo, modo: FormMode, supaba
   if (!next.firmas.verifica.empresa) next.firmas.verifica.empresa = EMPRESA_VERIFICA
   if (!next.firmas.verifica.nombre) next.firmas.verifica.nombre = 'Ana María Arango Arboleda'
   if (!next.firmas.verifica.cedula) next.firmas.verifica.cedula = '52440640'
-  if (!next.firmas.verifica.firma) next.firmas.verifica.firma = getFirmaVerificaUrl(supabaseUrl)
+  if (!next.firmas.verifica.firma && supabaseUrl.startsWith('http')) {
+    next.firmas.verifica.firma = getFirmaVerificaUrl(supabaseUrl)
+  }
 
   return next
 }

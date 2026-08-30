@@ -177,6 +177,16 @@ const tryPushToSheetsWebhook = async (data: FormularioVehiculo) => {
 export const crearFormulario = async (data: FormularioVehiculo) => {
   if (!loaded) loadFromStorage()
   const supaResult = await tryInsertToSupabase(data)
+  if (!supaResult.ok) {
+    const reason = supaResult.reason || 'error-desconocido'
+    if (reason === 'unauthenticated') {
+      throw new Error('Sesión expirada. Vuelve a iniciar sesión.')
+    }
+    if (reason === 'no-client') {
+      throw new Error('Supabase no configurado en la aplicación.')
+    }
+    throw new Error(`No se pudo guardar en la base de datos: ${reason}`)
+  }
   const sheetsResult = await tryPushToSheetsWebhook(data)
   registros.push(sanitizeForLocalCache({ ...data }))
   saveToStorage()

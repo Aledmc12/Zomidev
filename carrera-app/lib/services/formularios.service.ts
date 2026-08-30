@@ -157,6 +157,12 @@ const filterIngresosDisponiblesParaSalida = (formularios: FormularioVehiculo[]) 
   })
 }
 
+/** Google Apps Script usa `valor || ''` — el número 0 se pierde; enviar como string. */
+const buildSheetsPayload = (data: FormularioVehiculo): Record<string, unknown> => ({
+  ...data,
+  numeroFormulario: data.numeroFormulario === FORM_NUMBER_TEST ? '0' : data.numeroFormulario,
+})
+
 const tryPushToSheetsWebhook = async (data: FormularioVehiculo) => {
   try {
     const controller = new AbortController()
@@ -164,13 +170,13 @@ const tryPushToSheetsWebhook = async (data: FormularioVehiculo) => {
     const response = await fetch('/api/formularios/sheets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(buildSheetsPayload(data)),
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
-    const result = (await response.json()) as { ok?: boolean; reason?: string }
+    const result = (await response.json()) as { ok?: boolean; reason?: string; detail?: string }
     if (!response.ok || !result.ok) {
-      return { ok: false, reason: result.reason || `http-${response.status}` }
+      return { ok: false, reason: result.reason || result.detail || `http-${response.status}` }
     }
     return { ok: true }
   } catch (e) {

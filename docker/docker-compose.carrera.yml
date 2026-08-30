@@ -12,7 +12,7 @@ services:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_SHEETS_WEBHOOK_URL: ${NEXT_PUBLIC_SHEETS_WEBHOOK_URL:-}
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://app.carreraarango.com}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://carrera.zomidev.com}
     container_name: carrera_frontend
     restart: unless-stopped
     environment:

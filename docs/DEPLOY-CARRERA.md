@@ -1,4 +1,4 @@
-# Despliegue CarreraApp — app.carreraarango.com
+# Despliegue CarreraApp — carrera.zomidev.com
 
 App web de formularios de vehículos (paridad con la app móvil React Native).  
 Stack: **Next.js 15 + Supabase (auth + DB + Edge Functions) + Nginx + Cloudflare**.
@@ -19,7 +19,7 @@ Cloudflare (DNS proxy + Bot Fight + WAF + rate rules)
 VPS — wingconcept_nginx (80/443, multi-site por server_name)
    ├── wingconcept.com         → WingConcept (Docker interno)
    ├── zomidev.com             → 172.17.0.1:8080 (ZomiDev)
-   └── app.carreraarango.com   → 172.17.0.1:8081 (CarreraApp)
+   └── carrera.zomidev.com   → 172.17.0.1:8081 (CarreraApp)
                                         │
                                         ▼
                               carrera_nginx (Docker, puerto 8081)
@@ -93,7 +93,7 @@ nano .env.carrera
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase Carrera |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (misma que app móvil) |
 | `NEXT_PUBLIC_SHEETS_WEBHOOK_URL` | Webhook Google Sheets (opcional) |
-| `NEXT_PUBLIC_SITE_URL` | `https://app.carreraarango.com` |
+| `NEXT_PUBLIC_SITE_URL` | `https://carrera.zomidev.com` |
 | `CARRERA_NGINX_BIND` | `172.17.0.1` (accesible desde WingConcept nginx) |
 | `CARRERA_NGINX_PORT` | `8081` |
 
@@ -144,26 +144,30 @@ Recargar:
 
 ```bash
 cd /opt/wingconcept/docker
-docker compose exec nginx nginx -t
-docker compose exec nginx nginx -s reload
+docker exec wingconcept_nginx nginx -t
+docker exec wingconcept_nginx nginx -s reload
 ```
 
-### 4. DNS
+### 4. DNS (mismo dominio zomidev.com — no hace falta carreraarango.com)
 
-En Cloudflare (dominio `carreraarango.com`):
+En Cloudflare, zona **`zomidev.com`** (la que ya usas):
 
 | Tipo | Nombre | Contenido | Proxy |
 |------|--------|-----------|-------|
-| A | app | IP_VPS | Proxied |
+| A | `carrera` | IP del VPS | Proxied (naranja) |
+
+Queda: **`https://carrera.zomidev.com`**
+
+> Si prefieres otro subdominio (`app.zomidev.com`), cambia `server_name` en el snippet nginx y el registro DNS.
 
 ### 5. HTTPS (certbot)
 
 ```bash
 # Desde el contenedor/host donde corre certbot de WingConcept
 certbot certonly --webroot -w /var/www/certbot \
-  -d app.carreraarango.com
+  -d carrera.zomidev.com
 
-# Descomentar bloque HTTPS en wingconcept nginx para app.carreraarango.com
+# Descomentar bloque HTTPS en wingconcept nginx para carrera.zomidev.com
 # Recargar nginx
 ```
 
@@ -203,7 +207,7 @@ Rollback: `git checkout <commit-anterior>` y repetir el compose.
 
 ## Checklist post-despliegue
 
-- [ ] `https://app.carreraarango.com/login` carga con logo y formulario
+- [ ] `https://carrera.zomidev.com/login` carga con logo y formulario
 - [ ] Login con usuario de prueba Supabase → redirige a `/formulario`
 - [ ] Guardar formulario de ingreso → fila en Supabase `formularios`
 - [ ] Envío PDF/email (Edge Function) funciona con sesión activa
@@ -218,7 +222,7 @@ Rollback: `git checkout <commit-anterior>` y repetir el compose.
 | Servicio | Bind | Puerto host | Uso |
 |----------|------|-------------|-----|
 | ZomiDev nginx | 172.17.0.1 | 8080 | zomidev.com |
-| Carrera nginx | 172.17.0.1 | 8081 | app.carreraarango.com |
+| Carrera nginx | 172.17.0.1 | 8081 | carrera.zomidev.com |
 | WingConcept | 0.0.0.0 | 80/443 | Entrada pública |
 
 ---

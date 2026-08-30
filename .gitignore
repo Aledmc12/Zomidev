@@ -16,6 +16,13 @@ frontend/.next/
 
 # Docker secrets
 docker/.env
+docker/.env.carrera
+
+# CarreraApp
+carrera-app/.env.local
+carrera-app/.env.production
+carrera-app/node_modules/
+carrera-app/.next/
 
 # IDE / OS
 .idea/

@@ -9,6 +9,16 @@ type SheetsScriptResponse = {
   error?: string
   reason?: string
   message?: string
+  result?: string
+  savedRow?: unknown[]
+}
+
+/** El script real de Carrera responde con ok:true o savedRow; otros URLs dan falso positivo. */
+function isSheetsScriptSuccess(scriptResult: SheetsScriptResponse | null): boolean {
+  if (!scriptResult) return false
+  if (scriptResult.ok === true) return true
+  if (Array.isArray(scriptResult.savedRow)) return true
+  return false
 }
 
 /** Proxy servidor → Google Sheets (evita CORS del navegador). */
@@ -45,6 +55,19 @@ export async function POST(request: Request) {
         {
           ok: false,
           reason: scriptResult.error || scriptResult.reason || scriptResult.message || 'script-error',
+        },
+        { status: 502 },
+      )
+    }
+
+    if (!isSheetsScriptSuccess(scriptResult)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason: 'script-unexpected-response',
+          detail:
+            'Revisa NEXT_PUBLIC_SHEETS_WEBHOOK_URL en el servidor (debe ser el mismo script que la app móvil).',
+          script: scriptResult ?? raw.slice(0, 200),
         },
         { status: 502 },
       )

@@ -380,7 +380,9 @@ export function useFormVehiculo() {
       if (saveResult.sheets.ok) {
         parts.push('Google Sheets: OK.')
       } else if (saveResult.sheets.reason === 'no-webhook') {
-        parts.push('Sheets: webhook no configurado.')
+        parts.push('Sheets: webhook no configurado en el servidor.')
+      } else if (saveResult.sheets.reason === 'script-unexpected-response') {
+        parts.push('Sheets: URL del webhook incorrecta (revisar .env.carrera en el VPS).')
       } else {
         parts.push(`Sheets: falló (${saveResult.sheets.reason}).`)
       }

@@ -58,8 +58,8 @@ class Settings(BaseSettings):
     SENTRY_ENVIRONMENT: str = ""
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
 
-    SEED_ADMIN_EMAIL: str = "admin@zomidev.com"
-    SEED_ADMIN_PASSWORD: str = "Admin123!"
+    SEED_ADMIN_EMAIL: str = "aledmc@zomidev.com"
+    SEED_ADMIN_PASSWORD: str = "ZomiDevAdmin1!"
     SEED_CLIENT_EMAIL: str = "cliente@ejemplo.com"
     SEED_CLIENT_PASSWORD: str = "Cliente123!"
 

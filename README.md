@@ -83,7 +83,7 @@ Abrir [http://localhost:3000](http://localhost:3000)
 
 | Rol | Email | Contrasena |
 |-----|-------|------------|
-| Admin | admin@zomidev.com | Admin123! |
+| Admin | aledmc@zomidev.com | ZomiDevAdmin1! |
 | Cliente | cliente@ejemplo.com | Cliente123! |
 
 ## Rutas principales

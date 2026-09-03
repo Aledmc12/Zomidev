@@ -348,7 +348,7 @@ curl -I https://zomidev.com/admin
 # 2. Login
 curl -c cookies.txt -X POST https://zomidev.com/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@zomidev.com","password":"TU_PASSWORD"}'
+  -d '{"email":"aledmc@zomidev.com","password":"TU_PASSWORD"}'
 
 # 3. Con cookie → acceso
 curl -b cookies.txt https://zomidev.com/api/v1/auth/me

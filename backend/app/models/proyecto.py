@@ -49,7 +49,7 @@ class Proyecto(Base):
         "Hito", back_populates="proyecto", cascade="all, delete-orphan", order_by="Hito.orden"
     )
     entregables: Mapped[List["Entregable"]] = relationship(
-        "Entregable", back_populates="proyecto", cascade="all, delete-orphan", order_by="Entregable.created_at.desc()"
+        "Entregable", back_populates="proyecto", cascade="all, delete-orphan", order_by="Entregable.orden"
     )
     bitacoras: Mapped[List["Bitacora"]] = relationship(
         "Bitacora", back_populates="proyecto", cascade="all, delete-orphan", order_by="Bitacora.created_at.desc()"

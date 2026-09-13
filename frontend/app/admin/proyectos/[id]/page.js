@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import ProgressBar from '@/components/ui/ProgressBar'
 import AdminTimelineEditor from '@/components/admin/AdminTimelineEditor'
+import AdminEntregablesEditor from '@/components/admin/AdminEntregablesEditor'
 import { api } from '@/lib/api'
 
 export default function AdminProjectDetailPage() {
@@ -17,6 +18,7 @@ export default function AdminProjectDetailPage() {
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
   const [savingHitoId, setSavingHitoId] = useState(null)
+  const [savingEntregableId, setSavingEntregableId] = useState(null)
   const debounceTimers = useRef({})
 
   const loadProject = () => {
@@ -158,6 +160,32 @@ export default function AdminProjectDetailPage() {
     }
   }
 
+  const moveEntregable = async (entregableId, direction) => {
+    if (!project?.entregables?.length) return
+    const sorted = [...project.entregables].sort((a, b) => a.orden - b.orden)
+    const index = sorted.findIndex((e) => e.id === entregableId)
+    const swapIndex = direction === 'up' ? index - 1 : index + 1
+    if (swapIndex < 0 || swapIndex >= sorted.length) return
+
+    const current = sorted[index]
+    const other = sorted[swapIndex]
+
+    setSavingEntregableId(entregableId)
+    setError('')
+    try {
+      await Promise.all([
+        api.admin.updateEntregable(current.id, { orden: other.orden }),
+        api.admin.updateEntregable(other.id, { orden: current.orden }),
+      ])
+      setMessage('Orden de entregables actualizado.')
+      loadProject()
+    } catch (err) {
+      setError(err.detail || 'Error al reordenar entregables')
+    } finally {
+      setSavingEntregableId(null)
+    }
+  }
+
   const uploadEntregable = async (e) => {
     e.preventDefault()
     if (!entregableForm.file) {
@@ -269,6 +297,20 @@ export default function AdminProjectDetailPage() {
         <button type="submit" className="rounded-full border border-gold/40 px-6 py-2 text-sm text-gold-soft">Publicar avance</button>
       </form>
 
+      <section className="card-surface space-y-6 p-6">
+        <div>
+          <h2 className="font-serif text-xl text-gold-soft">Entregables</h2>
+          <p className="mt-2 text-sm text-muted">
+            Sube archivos y ordenalos con las flechas. El cliente los ve en ese orden.
+          </p>
+        </div>
+        <AdminEntregablesEditor
+          entregables={project.entregables}
+          onMove={moveEntregable}
+          savingId={savingEntregableId}
+        />
+      </section>
+
       <form onSubmit={uploadEntregable} className="card-surface space-y-4 p-6">
         <h2 className="font-serif text-xl text-gold-soft">Subir entregable</h2>
         <input
@@ -298,20 +340,6 @@ export default function AdminProjectDetailPage() {
           {uploading ? 'Subiendo...' : 'Subir archivo'}
         </button>
       </form>
-
-      {project.entregables?.length > 0 && (
-        <section className="card-surface p-6">
-          <h2 className="font-serif text-xl text-gold-soft">Entregables actuales</h2>
-          <ul className="mt-4 space-y-2 text-sm text-muted">
-            {project.entregables.map((item) => (
-              <li key={item.id} className="flex justify-between gap-4 border-b border-white/5 pb-2">
-                <span className="text-bone">{item.titulo}</span>
-                <span>{item.archivo_nombre || item.archivo_url}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       <section className="card-surface p-6">
         <h2 className="font-serif text-xl text-gold-soft">Bitacora reciente</h2>

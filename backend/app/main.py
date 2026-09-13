@@ -58,8 +58,11 @@ app = FastAPI(
     description="API de ZomiDev — sitio web y portal de clientes.",
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
+    openapi_url="/openapi.json" if not settings.is_production else None,
     lifespan=lifespan,
 )
+
+_BLOCKED_DOC_PATHS = frozenset({"/docs", "/redoc", "/openapi.json"})
 
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.get_allowed_hosts())
 app.add_middleware(
@@ -69,6 +72,13 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
+
+
+@app.middleware("http")
+async def block_api_docs_in_production(request: Request, call_next):
+    if settings.is_production and request.url.path in _BLOCKED_DOC_PATHS:
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+    return await call_next(request)
 
 
 @app.middleware("http")

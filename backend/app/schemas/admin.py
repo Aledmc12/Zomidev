@@ -80,6 +80,12 @@ class AdminEntregableCreate(BaseModel):
     archivo_url: str = Field(min_length=5, max_length=500)
 
 
+class AdminEntregableUpdate(BaseModel):
+    titulo: Optional[str] = Field(default=None, min_length=2, max_length=200)
+    descripcion: Optional[str] = None
+    orden: Optional[int] = Field(default=None, ge=0)
+
+
 class AdminPreviewCreate(BaseModel):
     titulo: str = Field(min_length=2, max_length=150)
     imagen_url: Optional[str] = None

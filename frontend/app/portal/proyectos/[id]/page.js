@@ -36,6 +36,7 @@ export default function ProjectDetailPage() {
   if (error && !project) return <p className="text-red-300">{error}</p>
   if (!project) return <p className="text-muted">Cargando proyecto...</p>
 
+  const sortedEntregables = [...(project.entregables || [])].sort((a, b) => a.orden - b.orden)
   const sortedBitacoras = [...(project.bitacoras || [])].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   )
@@ -103,7 +104,7 @@ export default function ProjectDetailPage() {
         <section className="card-surface p-8">
           <h2 className="font-serif text-2xl text-gold-soft">Entregables</h2>
           <div className="mt-6 space-y-3">
-            {project.entregables?.length ? project.entregables.map((item) => (
+            {sortedEntregables.length ? sortedEntregables.map((item) => (
               <button
                 key={item.id}
                 type="button"

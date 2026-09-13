@@ -18,6 +18,7 @@ from app.schemas import ProyectoDetail, ProyectoSummary, UsuarioResponse
 from app.schemas.admin import (
     AdminBitacoraCreate,
     AdminEntregableCreate,
+    AdminEntregableUpdate,
     AdminHitoCreate,
     AdminHitoUpdate,
     AdminPreviewCreate,
@@ -67,13 +68,27 @@ class AdminService:
 
     async def create_project(self, db: AsyncSession, data: AdminProyectoCreate):
         result = await db.execute(select(Usuario).where(Usuario.id == data.cliente_id))
-        if result.scalar_one_or_none() is None:
+        cliente = result.scalar_one_or_none()
+        if cliente is None:
             raise RecursoNoEncontradoError("Cliente no encontrado")
 
         proyecto = Proyecto(**data.model_dump())
         db.add(proyecto)
         await db.flush()
+        await self._notify_client(
+            db,
+            proyecto,
+            "Nuevo proyecto disponible",
+            f"Ya puedes seguir el avance de {proyecto.nombre} en tu portal.",
+            f"/portal/proyectos/{proyecto.id}",
+        )
         return ProyectoSummary.model_validate(proyecto)
+
+    async def _next_entregable_orden(self, db: AsyncSession, project_id: UUID) -> int:
+        result = await db.execute(
+            select(func.coalesce(func.max(Entregable.orden), -1)).where(Entregable.proyecto_id == project_id)
+        )
+        return (result.scalar_one() or -1) + 1
 
     async def _get_project(self, db: AsyncSession, project_id: UUID) -> Proyecto:
         result = await db.execute(select(Proyecto).where(Proyecto.id == project_id))
@@ -176,7 +191,8 @@ class AdminService:
     async def create_entregable(self, db: AsyncSession, project_id: UUID, data: AdminEntregableCreate):
         validate_archivo_url(data.archivo_url)
         proyecto = await self._get_project(db, project_id)
-        entregable = Entregable(proyecto_id=project_id, **data.model_dump())
+        orden = await self._next_entregable_orden(db, project_id)
+        entregable = Entregable(proyecto_id=project_id, orden=orden, **data.model_dump())
         db.add(entregable)
         await db.flush()
         await self._notify_client(
@@ -198,12 +214,14 @@ class AdminService:
         original_name: str,
     ):
         proyecto = await self._get_project(db, project_id)
+        orden = await self._next_entregable_orden(db, project_id)
         entregable = Entregable(
             proyecto_id=project_id,
             titulo=titulo,
             descripcion=descripcion,
             archivo_url=relative_path,
             archivo_nombre=original_name,
+            orden=orden,
         )
         db.add(entregable)
         await db.flush()
@@ -214,6 +232,16 @@ class AdminService:
             titulo,
             f"/portal/proyectos/{project_id}",
         )
+        return entregable
+
+    async def update_entregable(self, db: AsyncSession, entregable_id: UUID, data: AdminEntregableUpdate):
+        result = await db.execute(select(Entregable).where(Entregable.id == entregable_id))
+        entregable = result.scalar_one_or_none()
+        if entregable is None:
+            raise RecursoNoEncontradoError("Entregable no encontrado")
+        for key, value in data.model_dump(exclude_unset=True).items():
+            setattr(entregable, key, value)
+        await db.flush()
         return entregable
 
     async def create_preview(self, db: AsyncSession, project_id: UUID, data: AdminPreviewCreate):

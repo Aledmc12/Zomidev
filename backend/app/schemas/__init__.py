@@ -75,6 +75,7 @@ class EntregableResponse(BaseModel):
     descripcion: Optional[str] = None
     archivo_url: str
     archivo_nombre: Optional[str] = None
+    orden: int
     created_at: datetime
 
     model_config = {"from_attributes": True}

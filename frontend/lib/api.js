@@ -182,6 +182,7 @@ export const api = {
     createBitacora: (projectId, data) => request(`/admin/projects/${projectId}/bitacoras`, { method: 'POST', body: JSON.stringify(data) }),
     createEntregable: (projectId, data) => request(`/admin/projects/${projectId}/entregables`, { method: 'POST', body: JSON.stringify(data) }),
     uploadEntregable: (projectId, formData) => uploadRequest(`/admin/projects/${projectId}/entregables/upload`, formData),
+    updateEntregable: (id, data) => request(`/admin/entregables/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     createPreview: (projectId, data) => request(`/admin/projects/${projectId}/previews`, { method: 'POST', body: JSON.stringify(data) }),
   },
 }

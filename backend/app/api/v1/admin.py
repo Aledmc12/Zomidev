@@ -11,6 +11,7 @@ from app.schemas import ProyectoDetail, ProyectoSummary
 from app.schemas.admin import (
     AdminBitacoraCreate,
     AdminEntregableCreate,
+    AdminEntregableUpdate,
     AdminHitoCreate,
     AdminHitoUpdate,
     AdminPreviewCreate,
@@ -150,6 +151,21 @@ async def upload_entregable(
         "id": entregable.id,
         "titulo": entregable.titulo,
         "archivo_nombre": entregable.archivo_nombre,
+    }
+
+
+@router.patch("/entregables/{entregable_id}")
+async def update_entregable(
+    entregable_id: UUID,
+    data: AdminEntregableUpdate,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(get_current_admin),
+):
+    entregable = await admin_service.update_entregable(db, entregable_id, data)
+    return {
+        "id": entregable.id,
+        "titulo": entregable.titulo,
+        "orden": entregable.orden,
     }
 
 
